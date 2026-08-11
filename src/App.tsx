@@ -1,7 +1,7 @@
-"use client";
-
 import { useEffect, useState, type KeyboardEvent } from "react";
-import brandDna from "../public/brand/brand-dna.json";
+
+const brandDna = __BRAND_DNA__;
+const brandDnaDownloadUrl = "/brand-dna/brand/brand-dna.json";
 
 const sections = [
   ["overview", "Overview"],
@@ -488,7 +488,7 @@ export default function Home() {
               <h3>Ready for people and agents.</h3>
             </div>
             <div className="download-list">
-              <a href="/brand/brand-dna.json" download><span>Download the complete Brand DNA</span><code>.json ↓</code></a>
+              <a href={brandDnaDownloadUrl} download><span>Download the complete Brand DNA</span><code>.json ↓</code></a>
             </div>
           </div>
           <div className="scope-note">
