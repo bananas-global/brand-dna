@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "brand-dna.schema.json",
+  "title": "Minimum Viable Brand DNA",
+  "type": "object",
+  "required": [
+    "meta",
+    "essence",
+    "positioning",
+    "expressionPrinciples",
+    "voice",
+    "visual",
+    "imagery",
+    "motionAndSound",
+    "informationAndData",
+    "accessibility",
+    "channels",
+    "provenance"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["schemaVersion", "brandName", "language", "status", "version"]
+    },
+    "essence": {
+      "type": "object",
+      "required": ["centralIdea", "purpose", "role", "tension", "promise"]
+    },
+    "positioning": {
+      "type": "object",
+      "required": ["statement", "primaryAudience", "influencingAudience"]
+    },
+    "expressionPrinciples": { "type": "array", "minItems": 3, "maxItems": 3 },
+    "voice": { "type": "object" },
+    "visual": { "type": "object" },
+    "imagery": { "type": "object" },
+    "motionAndSound": { "type": "object" },
+    "informationAndData": { "type": "object" },
+    "accessibility": { "type": "object" },
+    "channels": { "type": "array", "minItems": 1 },
+    "provenance": {
+      "type": "object",
+      "required": ["evidence", "decisions", "proposals", "missing"],
+      "properties": {
+        "evidence": { "type": "array" },
+        "decisions": { "type": "array" },
+        "proposals": { "type": "array" },
+        "missing": { "type": "array" }
+      }
+    }
+  }
+}

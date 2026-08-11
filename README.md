@@ -1,29 +1,30 @@
-# Brand DNA — Master Template
+# Brand DNA — Minimum Viable Source of Truth
 
-An editorial, reusable source-of-truth template for documenting how a brand thinks, speaks, looks, moves, and adapts across channels.
+An open-source starter for turning a short designer brief and any available brand materials into a useful Brand DNA for people and AI agents.
 
-The project serves two audiences:
+The project deliberately keeps the workflow small:
 
-- People use the tabbed website to understand the brand system and its decision logic.
-- AI agents use the structured files under `public/brand/` to generate and validate brand-aligned materials.
+```text
+references + 8 questions → brand-dna.json → website
+```
 
-The content is intentionally fictional and neutral. Replace the placeholders with approved client decisions; do not treat the example values as a real brand.
+Start with [START-HERE.md](START-HERE.md).
 
 ## What is included
 
-- Brand essence, positioning, audiences, and decision priorities
-- Expression principles and voice guidelines
-- Visual, imagery, motion, sound, and data foundations
-- Accessibility and ethical boundaries
-- Profiles for presentations, proposals, social, web, and BI
-- Machine-readable Brand DNA, tokens, channel profiles, asset manifest, and validation checklist
-- Governance, status, ownership, and exception handling
+- One project-local Codex skill: `$brand-dna-builder`
+- One folder for optional source material: `references/`
+- One canonical brand file: `public/brand/brand-dna.json`
+- One navigable, responsive website that reads the canonical file directly
+- Brand essence, expression, voice, visual identity, imagery, motion, data, accessibility, and channel behavior
+- Basic color, typography, spacing, radius, shadow, and motion tokens
+- Explicit provenance: evidence, decisions, proposals, and missing items
 
-The project intentionally does not include an extensive UI component library. Channel-specific components belong in their respective implementation systems.
+UI component libraries, approval workflows, ownership models, and review schedules are intentionally outside the scope.
 
 ## Run locally
 
-Requirements: Node.js `>=22.13.0`.
+Requires Node.js `>=22.13.0`.
 
 ```bash
 npm install
@@ -35,24 +36,10 @@ Open `http://localhost:3000`.
 ## Validate
 
 ```bash
-npm run build
+npm test
 npm run lint
-node --test tests/rendered-html.test.mjs
 ```
-
-## Structured brand package
-
-```text
-public/brand/
-├── brand-dna.yaml
-├── tokens.json
-├── channel-profiles.yaml
-├── assets-manifest.json
-└── validation-checklist.yaml
-```
-
-Keep the human-facing documentation and machine-readable files synchronized. In a conflict, truth and accessibility outrank expression; invariants outrank preferences; channel profiles may modify only properties explicitly marked as flexible.
 
 ## License
 
-Add the open-source license selected by the project owner before redistributing the repository.
+[MIT](LICENSE)

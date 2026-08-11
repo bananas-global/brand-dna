@@ -21,7 +21,7 @@ test("renders the complete Brand DNA template", async () => {
 
   const html = await response.text();
   assert.match(html, /<html[^>]+lang="en-US"/i);
-  assert.match(html, /<title>Brand DNA — Master Template<\/title>/i);
+  assert.match(html, /<title>Brand DNA — Open Source Starter<\/title>/i);
   assert.match(html, /Brand essence/);
   assert.match(html, /Voice &amp; tone/);
   assert.match(html, /Visual identity/);
@@ -31,7 +31,7 @@ test("renders the complete Brand DNA template", async () => {
   assert.match(html, /Accessibility &amp; boundaries/);
   assert.match(html, /Channel profiles/);
   assert.match(html, /AI contract/);
-  assert.match(html, /Governance/);
+  assert.match(html, /Build yours/);
 });
 
 test("keeps tab navigation and fictional content accessible", async () => {
@@ -41,23 +41,38 @@ test("keeps tab navigation and fictional content accessible", async () => {
   assert.match(html, /role="tablist"/);
   assert.match(html, /role="tabpanel"/);
   assert.match(html, /aria-selected="true"/);
-  assert.match(html, /Neutral placeholder/);
+  assert.match(html, /Minimum viable Brand DNA/);
   assert.match(html, /Illustrative baseline · no real data/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("delivers the structured contract for agents", async () => {
+test("delivers one canonical Brand DNA source for people and agents", async () => {
   const root = new URL("../public/brand/", import.meta.url);
-  const [dna, tokens, channels, assets, checklist] = await Promise.all([
-    readFile(new URL("brand-dna.yaml", root), "utf8"),
-    readFile(new URL("tokens.json", root), "utf8"),
-    readFile(new URL("channel-profiles.yaml", root), "utf8"),
-    readFile(new URL("assets-manifest.json", root), "utf8"),
-    readFile(new URL("validation-checklist.yaml", root), "utf8"),
+  const dna = JSON.parse(await readFile(new URL("brand-dna.json", root), "utf8"));
+  assert.equal(dna.meta.status, "starter");
+  assert.equal(dna.expressionPrinciples.length, 3);
+  assert.equal(dna.visual.colors.length, 5);
+  assert.ok(dna.visual.typography && dna.visual.spacing && dna.visual.radii && dna.visual.shadows);
+  assert.ok(dna.motionAndSound.motion);
+  assert.deepEqual(Object.keys(dna.provenance), ["evidence", "decisions", "proposals", "missing"]);
+
+  const html = await (await render()).text();
+  assert.match(html, new RegExp(dna.essence.centralIdea.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(html, /Download the complete Brand DNA/);
+  assert.doesNotMatch(html, /brand-dna\.yaml|tokens\.json|channel-profiles\.yaml|assets-manifest\.json|validation-checklist\.yaml/);
+});
+
+test("ships the zero-setup builder with the eight-question protocol", async () => {
+  const [start, skill] = await Promise.all([
+    readFile(new URL("../START-HERE.md", import.meta.url), "utf8"),
+    readFile(new URL("../.agents/skills/brand-dna-builder/SKILL.md", import.meta.url), "utf8"),
   ]);
-  assert.match(dna, /decision_priority:/);
-  assert.match(channels, /business_intelligence:/);
-  assert.match(checklist, /accessibility\.contrast/);
-  assert.equal(JSON.parse(tokens).meta.status, "template");
-  assert.equal(JSON.parse(assets).status, "template");
+  assert.match(start, /Use \$brand-dna-builder/);
+  assert.match(skill, /Inspect every useful file under `references\/`/);
+  assert.match(skill, /Ask the remaining questions together/);
+  assert.match(skill, /Evidence/);
+  assert.match(skill, /Decision/);
+  assert.match(skill, /Proposal/);
+  assert.match(skill, /Missing/);
+  assert.equal((start.match(/^\d+\. /gm) ?? []).length, 8);
 });

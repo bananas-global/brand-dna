@@ -14,18 +14,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: baseUrl,
-    title: "Brand DNA — Master Template",
-    description: "A brand source of truth for people and agents.",
+    title: "Brand DNA — Open Source Starter",
+    description: "Eight questions. One source of truth for people and AI agents.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "Brand DNA — Master Template",
-      description: "A brand source of truth for people and agents.",
+      title: "Brand DNA — Open Source Starter",
+      description: "Eight questions. One source of truth for people and AI agents.",
       images: [{ url: new URL("/og.png", baseUrl).toString(), width: 1200, height: 630, alt: "Brand DNA — a source of truth for people and agents" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Brand DNA — Master Template",
-      description: "A brand source of truth for people and agents.",
+      title: "Brand DNA — Open Source Starter",
+      description: "Eight questions. One source of truth for people and AI agents.",
       images: [new URL("/og.png", baseUrl).toString()],
     },
   };

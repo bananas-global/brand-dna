@@ -1,0 +1,4 @@
+interface:
+  display_name: "Brand DNA Builder"
+  short_description: "Turn a short brief into usable Brand DNA"
+  default_prompt: "Use $brand-dna-builder to build or update this project’s Brand DNA."
