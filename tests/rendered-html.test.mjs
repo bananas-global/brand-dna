@@ -14,39 +14,39 @@ async function render() {
   );
 }
 
-test("renderiza o template completo de Brand DNA", async () => {
+test("renders the complete Brand DNA template", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<html[^>]+lang="pt-BR"/i);
-  assert.match(html, /<title>Brand DNA — Template mestre<\/title>/i);
-  assert.match(html, /Essência da marca/);
-  assert.match(html, /Identidade verbal/);
-  assert.match(html, /Identidade visual/);
-  assert.match(html, /Sistema de imagem/);
-  assert.match(html, /Motion e som/);
-  assert.match(html, /Linguagem de informação e dados/);
-  assert.match(html, /Acessibilidade e limites/);
-  assert.match(html, /Perfis por canal/);
-  assert.match(html, /Contrato para IA/);
-  assert.match(html, /Governança/);
+  assert.match(html, /<html[^>]+lang="en-US"/i);
+  assert.match(html, /<title>Brand DNA — Master Template<\/title>/i);
+  assert.match(html, /Brand essence/);
+  assert.match(html, /Voice &amp; tone/);
+  assert.match(html, /Visual identity/);
+  assert.match(html, /Imagery system/);
+  assert.match(html, /Motion &amp; sound/);
+  assert.match(html, /Information &amp; data language/);
+  assert.match(html, /Accessibility &amp; boundaries/);
+  assert.match(html, /Channel profiles/);
+  assert.match(html, /AI contract/);
+  assert.match(html, /Governance/);
 });
 
-test("mantém a navegação por abas e o conteúdo fictício acessíveis", async () => {
+test("keeps tab navigation and fictional content accessible", async () => {
   const html = await (await render()).text();
-  assert.match(html, /href="#conteudo">Pular para o conteúdo/);
-  assert.match(html, /aria-label="Navegação da página"/);
+  assert.match(html, /href="#content">Skip to content/);
+  assert.match(html, /aria-label="Page navigation"/);
   assert.match(html, /role="tablist"/);
   assert.match(html, /role="tabpanel"/);
   assert.match(html, /aria-selected="true"/);
-  assert.match(html, /Placeholder neutro/);
-  assert.match(html, /Base ilustrativa · sem dados reais/);
+  assert.match(html, /Neutral placeholder/);
+  assert.match(html, /Illustrative baseline · no real data/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("entrega o contrato estruturado para agentes", async () => {
+test("delivers the structured contract for agents", async () => {
   const root = new URL("../public/brand/", import.meta.url);
   const [dna, tokens, channels, assets, checklist] = await Promise.all([
     readFile(new URL("brand-dna.yaml", root), "utf8"),

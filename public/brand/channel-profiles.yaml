@@ -15,36 +15,36 @@ rule:
 
 profiles:
   presentations:
-    job: "Conduzir uma decisão por uma sequência narrativa."
-    density: "30 a 60 palavras por slide, salvo anexos."
+    job: "Guide a decision through a narrative sequence."
+    density: "30 to 60 words per slide, excluding appendices."
     structure: [context, tension, evidence, proposal, next_step]
     image_role: evidence
-    data_rule: "Todo gráfico deve declarar a conclusão."
+    data_rule: "Every chart must state its conclusion."
   proposals:
-    job: "Transformar entendimento em acordo claro."
-    tone: "Seguro, preciso e não grandioso."
+    job: "Turn understanding into a clear agreement."
+    tone: "Confident, precise, and not grandiose."
     structure: [context, approach, scope, evidence, investment, next_step]
     invariants:
-      - "Escopo e condições não podem ser ambíguos."
+      - "Scope and conditions must not be ambiguous."
   social:
-    job: "Criar atenção relevante e abrir uma conversa."
+    job: "Create relevant attention and open a conversation."
     rhythm: expressive
     structure: [specific_hook, single_idea, useful_detail, invitation]
     constraints:
-      - "Pouco texto dentro da arte."
-      - "A legenda aprofunda; não repete."
+      - "Use minimal copy inside the artwork."
+      - "The caption adds depth; it does not repeat."
   web:
-    job: "Orientar, provar e convidar à ação."
+    job: "Guide, prove, and invite action."
     structure: [promise, relevance, proof, detail, action]
     invariants:
-      - "Hierarquia responsiva."
-      - "Foco visível e contraste válido."
-      - "Motion explica mudança."
+      - "Responsive hierarchy."
+      - "Visible focus and valid contrast."
+      - "Motion explains change."
   business_intelligence:
-    job: "Reduzir o tempo entre leitura e decisão."
+    job: "Reduce the time between reading and decision."
     density: high_but_scannable
     invariants:
-      - "KPI inclui unidade e período."
-      - "Cor semântica possui redundância textual."
-      - "Escalas não dramatizam diferenças."
-      - "Desvios relevantes recebem anotação."
+      - "Every KPI includes its unit and period."
+      - "Semantic color includes a redundant text cue."
+      - "Scales do not dramatize differences."
+      - "Relevant deviations receive an annotation."

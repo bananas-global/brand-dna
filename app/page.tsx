@@ -3,18 +3,18 @@
 import { useEffect, useState, type KeyboardEvent } from "react";
 
 const sections = [
-  ["inicio", "Visão geral"],
-  ["essencia", "Estratégia"],
-  ["expressao", "Expressão"],
-  ["verbal", "Identidade verbal"],
-  ["visual", "Identidade visual"],
-  ["imagem", "Sistema de imagem"],
-  ["motion", "Motion & som"],
-  ["dados", "Informação & dados"],
-  ["acessibilidade", "Acessibilidade"],
-  ["canais", "Perfis por canal"],
-  ["implementacao", "Contrato para IA"],
-  ["governanca", "Governança"],
+  ["overview", "Overview"],
+  ["strategy", "Strategy"],
+  ["expression", "Expression"],
+  ["voice", "Voice & tone"],
+  ["visual", "Visual identity"],
+  ["imagery", "Imagery system"],
+  ["motion", "Motion & sound"],
+  ["data", "Information & data"],
+  ["accessibility", "Accessibility"],
+  ["channels", "Channel profiles"],
+  ["ai-contract", "AI contract"],
+  ["governance", "Governance"],
 ] as const;
 
 type SectionId = (typeof sections)[number][0];
@@ -30,7 +30,7 @@ const Swatch = ({ name, hex, className }: { name: string; hex: string; className
 );
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<SectionId>("inicio");
+  const [activeTab, setActiveTab] = useState<SectionId>("overview");
 
   useEffect(() => {
     const syncWithHash = () => {
@@ -68,22 +68,22 @@ export default function Home() {
 
   return (
     <main>
-      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <a className="skip-link" href="#content">Skip to content</a>
 
-      <header className="topbar" aria-label="Cabeçalho do documento">
-        <button className="wordmark" type="button" onClick={() => selectTab("inicio")} aria-label="Abrir visão geral">
+      <header className="topbar" aria-label="Document header">
+        <button className="wordmark" type="button" onClick={() => selectTab("overview")} aria-label="Open overview">
           <span>DNA</span><i aria-hidden="true" />
         </button>
-        <p>Template de sistema de marca</p>
+        <p>Brand system template</p>
         <div className="document-meta">
           <span>Base 00</span>
-          <span>v1.1</span>
+          <span>v1.2</span>
         </div>
       </header>
 
-      <aside className="rail" aria-label="Navegação da página">
-        <p className="rail-label">Capítulos</p>
-        <nav aria-label="Capítulos do Brand DNA">
+      <aside className="rail" aria-label="Page navigation">
+        <p className="rail-label">Chapters</p>
+        <nav aria-label="Brand DNA chapters">
           <ol role="tablist" aria-orientation="vertical">
             {sections.map(([id, label], index) => (
               <li key={id}>
@@ -104,187 +104,187 @@ export default function Home() {
             ))}
           </ol>
         </nav>
-        <p className="rail-note">Uma fonte de verdade, antes das interfaces.</p>
+        <p className="rail-note">A source of truth before interfaces.</p>
       </aside>
 
-      <div className="page" id="conteudo">
-        <section className="hero tab-panel" id="panel-inicio" role="tabpanel" aria-labelledby="tab-inicio" hidden={activeTab !== "inicio"}>
+      <div className="page" id="content">
+        <section className="hero tab-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" hidden={activeTab !== "overview"}>
           <div className="hero-kicker reveal r1">
-            <span>Documento vivo</span>
-            <span>Uso fictício / modelo aberto</span>
+            <span>Living document</span>
+            <span>Fictional use / open template</span>
           </div>
           <div className="hero-copy reveal r2">
             <p className="hero-pretitle">Brand DNA / Brand System</p>
             <h1 id="hero-title">
-              O que torna uma marca
-              <em>ela mesma.</em>
+              What makes a brand
+              <em>itself.</em>
             </h1>
           </div>
           <div className="hero-bottom reveal r3">
             <p className="hero-intro">
-              Um template para registrar as decisões que mantêm uma marca coerente — da ideia central
-              ao comportamento em cada canal.
+              A template for documenting the decisions that keep a brand coherent—from its central idea
+              to its behavior in every channel.
             </p>
             <div className="spectrum" aria-label="Espectro visual demonstrativo">
               <span /><span /><span /><span /><span />
             </div>
-            <p className="hero-caption">Placeholder neutro. Substitua o conteúdo; preserve a lógica.</p>
+            <p className="hero-caption">Neutral placeholder. Replace the content; preserve the logic.</p>
           </div>
         </section>
 
-        <section className="chapter essence tab-panel" id="panel-essencia" role="tabpanel" aria-labelledby="tab-essencia" hidden={activeTab !== "essencia"}>
+        <section className="chapter essence tab-panel" id="panel-strategy" role="tabpanel" aria-labelledby="tab-strategy" hidden={activeTab !== "strategy"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Fundamento</p>
-              <h2 id="essencia-title">Essência da marca</h2>
+              <p className="eyebrow">Foundation</p>
+              <h2 id="strategy-title">Brand essence</h2>
             </div>
-            <p>A parte que não muda quando o formato muda.</p>
+            <p>The part that does not change when the format does.</p>
           </div>
           <div className="essence-grid">
             <div className="essence-statement">
-              <span className="field-label">Ideia central</span>
-              <blockquote>“[Uma verdade curta que orienta todas as escolhas.]”</blockquote>
-              <p>Não é uma tagline. É o critério interno para dizer “sim”, “não” e “ainda não”.</p>
+              <span className="field-label">Central idea</span>
+              <blockquote>“[A short truth that guides every choice.]”</blockquote>
+              <p>This is not a tagline. It is the internal criterion for saying “yes,” “no,” and “not yet.”</p>
             </div>
             <dl className="definition-list">
               <div>
-                <dt>Propósito</dt>
-                <dd>[A mudança concreta que a marca quer habilitar.]</dd>
+                <dt>Purpose</dt>
+                <dd>[The concrete change the brand wants to enable.]</dd>
               </div>
               <div>
-                <dt>Papel</dt>
-                <dd>[Como ela participa da vida das pessoas.]</dd>
+                <dt>Role</dt>
+                <dd>[How it participates in people’s lives.]</dd>
               </div>
               <div>
-                <dt>Tensão</dt>
-                <dd>[O conflito cultural ou humano que ela ajuda a resolver.]</dd>
+                <dt>Tension</dt>
+                <dd>[The cultural or human conflict it helps resolve.]</dd>
               </div>
               <div>
-                <dt>Promessa</dt>
-                <dd>[A experiência que deve se repetir em cada contato.]</dd>
+                <dt>Promise</dt>
+                <dd>[The experience that should repeat at every touchpoint.]</dd>
               </div>
             </dl>
           </div>
           <div className="strategy-grid">
             <article className="strategy-card strategy-position">
-              <p className="field-label">Posicionamento</p>
-              <h3>Para [público prioritário], somos [categoria] que [benefício distintivo], porque [prova].</h3>
-              <p>Uma frase comparável e verificável. Não é slogan nem texto publicitário.</p>
+              <p className="field-label">Positioning</p>
+              <h3>For [priority audience], we are the [category] that [distinct benefit], because [proof].</h3>
+              <p>A comparable, verifiable statement. It is not a slogan or advertising copy.</p>
             </article>
             <article className="strategy-card">
-              <p className="field-label">Público primário</p>
-              <h3>[Quem vive o problema e escolhe a solução.]</h3>
-              <ul><li>Contexto e necessidades</li><li>Barreiras e objeções</li><li>Critérios de decisão</li></ul>
+              <p className="field-label">Primary audience</p>
+              <h3>[Who experiences the problem and chooses the solution.]</h3>
+              <ul><li>Context and needs</li><li>Barriers and objections</li><li>Decision criteria</li></ul>
             </article>
             <article className="strategy-card">
-              <p className="field-label">Público influenciador</p>
-              <h3>[Quem recomenda, aprova ou viabiliza.]</h3>
-              <ul><li>O que precisa comprovar</li><li>Riscos que precisa reduzir</li><li>Linguagem que reconhece</li></ul>
+              <p className="field-label">Influencing audience</p>
+              <h3>[Who recommends, approves, or enables the decision.]</h3>
+              <ul><li>What they need to prove</li><li>Risks they need to reduce</li><li>Language they recognize</li></ul>
             </article>
           </div>
           <div className="decision-order">
-            <p className="field-label">Ordem de decisão para agentes</p>
+            <p className="field-label">Decision order for agents</p>
             <ol>
-              <li><span>01</span><b>Verdade</b><p>Nunca sacrificar precisão por impacto.</p></li>
-              <li><span>02</span><b>Clareza</b><p>Reduzir esforço antes de adicionar expressão.</p></li>
-              <li><span>03</span><b>Distinção</b><p>Aplicar a personalidade sem afetar compreensão.</p></li>
-              <li><span>04</span><b>Canal</b><p>Adaptar o formato, preservando os invariantes.</p></li>
+              <li><span>01</span><b>Truth</b><p>Never sacrifice accuracy for impact.</p></li>
+              <li><span>02</span><b>Clarity</b><p>Reduce effort before adding expression.</p></li>
+              <li><span>03</span><b>Distinction</b><p>Apply personality without reducing comprehension.</p></li>
+              <li><span>04</span><b>Channel</b><p>Adapt the format while preserving invariants.</p></li>
             </ol>
           </div>
-          <div className="brand-compass" aria-label="Bússola de posicionamento fictícia">
-            <div className="axis axis-x"><span>Próxima</span><span>Referencial</span></div>
-            <div className="axis axis-y"><span>Calma</span><span>Expressiva</span></div>
-            <div className="compass-field"><span className="compass-point">Ponto de intenção</span></div>
+          <div className="brand-compass" aria-label="Fictional positioning compass">
+            <div className="axis axis-x"><span>Approachable</span><span>Authoritative</span></div>
+            <div className="axis axis-y"><span>Calm</span><span>Expressive</span></div>
+            <div className="compass-field"><span className="compass-point">Intent point</span></div>
           </div>
         </section>
 
-        <section className="chapter tab-panel" id="panel-expressao" role="tabpanel" aria-labelledby="tab-expressao" hidden={activeTab !== "expressao"}>
+        <section className="chapter tab-panel" id="panel-expression" role="tabpanel" aria-labelledby="tab-expression" hidden={activeTab !== "expression"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Comportamento</p>
-              <h2 id="expressao-title">Princípios de expressão</h2>
+              <p className="eyebrow">Behavior</p>
+              <h2 id="expression-title">Expression principles</h2>
             </div>
-            <p>Três tensões produtivas ajudam a marca a soar como ela mesma sem repetir fórmulas.</p>
+            <p>Three productive tensions help the brand sound like itself without repeating formulas.</p>
           </div>
           <div className="principles-grid">
             <article>
               <span className="principle-index">P—A</span>
-              <h3>Clara,<br />não simplista.</h3>
-              <p>Reduzimos esforço sem apagar nuance. Primeiro orientamos; depois aprofundamos.</p>
-              <div className="range"><i style={{ left: "76%" }} /><span>Direta</span><span>Densa</span></div>
+              <h3>Clear,<br />not simplistic.</h3>
+              <p>We reduce effort without erasing nuance. We orient first, then go deeper.</p>
+              <div className="range"><i style={{ left: "76%" }} /><span>Direct</span><span>Dense</span></div>
             </article>
             <article>
               <span className="principle-index">P—B</span>
-              <h3>Humana,<br />não informal.</h3>
-              <p>Falamos com pessoas, não com segmentos. Calor vem da atenção, não de intimidade forçada.</p>
-              <div className="range"><i style={{ left: "42%" }} /><span>Próxima</span><span>Distante</span></div>
+              <h3>Human,<br />not casual.</h3>
+              <p>We speak to people, not segments. Warmth comes from attention, not forced intimacy.</p>
+              <div className="range"><i style={{ left: "42%" }} /><span>Close</span><span>Distant</span></div>
             </article>
             <article>
               <span className="principle-index">P—C</span>
-              <h3>Viva,<br />não ruidosa.</h3>
-              <p>Usamos contraste para criar energia. Uma ideia por vez, com espaço para respirar.</p>
-              <div className="range"><i style={{ left: "61%" }} /><span>Contida</span><span>Intensa</span></div>
+              <h3>Vivid,<br />not noisy.</h3>
+              <p>We use contrast to create energy. One idea at a time, with room to breathe.</p>
+              <div className="range"><i style={{ left: "61%" }} /><span>Restrained</span><span>Intense</span></div>
             </article>
           </div>
           <div className="example-pair">
-            <article className="example-approved"><span>FUNCIONA</span><h3>“Veja primeiro o que muda sua decisão.”</h3><p>Direto, humano e com hierarquia clara.</p></article>
-            <article className="example-avoid"><span>EVITAR</span><h3>“Descubra um universo revolucionário de possibilidades.”</h3><p>Grandioso sem evidência, genérico e ruidoso.</p></article>
+            <article className="example-approved"><span>WORKS</span><h3>“See what changes your decision first.”</h3><p>Direct, human, and clearly prioritized.</p></article>
+            <article className="example-avoid"><span>AVOID</span><h3>“Discover a revolutionary universe of possibilities.”</h3><p>Grandiose without evidence, generic, and noisy.</p></article>
           </div>
         </section>
 
-        <section className="chapter verbal tab-panel" id="panel-verbal" role="tabpanel" aria-labelledby="tab-verbal" hidden={activeTab !== "verbal"}>
+        <section className="chapter verbal tab-panel" id="panel-voice" role="tabpanel" aria-labelledby="tab-voice" hidden={activeTab !== "voice"}>
           <div className="section-head light">
             <div>
-              <p className="eyebrow">Linguagem</p>
-              <h2 id="verbal-title">Identidade verbal</h2>
+              <p className="eyebrow">Language</p>
+              <h2 id="voice-title">Voice & tone</h2>
             </div>
-            <p>A voz é estável. O tom se adapta ao contexto, sem perder a intenção.</p>
+            <p>Voice is stable. Tone adapts to context without losing intent.</p>
           </div>
           <div className="voice-grid">
             <div className="voice-hero">
-              <p className="field-label">Voz em uma frase</p>
-              <blockquote>“[Dizemos o essencial com precisão e deixamos uma porta aberta.]”</blockquote>
+              <p className="field-label">Voice in one sentence</p>
+              <blockquote>“[We say what matters with precision and leave a door open.]”</blockquote>
             </div>
             <div className="voice-rules">
-              <div><span>01</span><h3>Comece pela pessoa</h3><p>“Veja onde você está” antes de “Confira o painel”.</p></div>
-              <div><span>02</span><h3>Prefira verbos concretos</h3><p>“Compare, escolha, avance” em vez de conceitos abstratos.</p></div>
-              <div><span>03</span><h3>Termine com direção</h3><p>Toda mensagem deve deixar claro o próximo passo possível.</p></div>
+              <div><span>01</span><h3>Start with the person</h3><p>“See where you are” before “Check the dashboard.”</p></div>
+              <div><span>02</span><h3>Prefer concrete verbs</h3><p>“Compare, choose, move forward” instead of abstract concepts.</p></div>
+              <div><span>03</span><h3>End with direction</h3><p>Every message should make the next possible step clear.</p></div>
             </div>
           </div>
-          <div className="tone-table" role="table" aria-label="Escala de tom por contexto">
+          <div className="tone-table" role="table" aria-label="Tone scale by context">
             <div className="tone-row tone-header" role="row">
-              <span role="columnheader">Contexto</span><span role="columnheader">Prioridade</span><span role="columnheader">Exemplo fictício</span>
+              <span role="columnheader">Context</span><span role="columnheader">Priority</span><span role="columnheader">Fictional example</span>
             </div>
-            <div className="tone-row" role="row"><b role="cell">Orientar</b><span role="cell">Clareza + calma</span><p role="cell">“Comece por aqui. Você pode revisar depois.”</p></div>
-            <div className="tone-row" role="row"><b role="cell">Celebrar</b><span role="cell">Energia + medida</span><p role="cell">“Tudo pronto. Seu próximo passo já está aberto.”</p></div>
-            <div className="tone-row" role="row"><b role="cell">Corrigir</b><span role="cell">Precisão + cuidado</span><p role="cell">“Este campo precisa de uma data futura.”</p></div>
+            <div className="tone-row" role="row"><b role="cell">Guide</b><span role="cell">Clarity + calm</span><p role="cell">“Start here. You can review it later.”</p></div>
+            <div className="tone-row" role="row"><b role="cell">Celebrate</b><span role="cell">Energy + restraint</span><p role="cell">“All set. Your next step is ready.”</p></div>
+            <div className="tone-row" role="row"><b role="cell">Correct</b><span role="cell">Precision + care</span><p role="cell">“This field needs a future date.”</p></div>
           </div>
           <div className="word-bank">
-            <div><p className="field-label">Vocabulário preferido</p><p>começar · comparar · entender · escolher · avançar · revisar</p></div>
-            <div><p className="field-label">Evitar por padrão</p><p>disruptivo · revolucionário · líder · imperdível · solução 360º</p></div>
+            <div><p className="field-label">Preferred vocabulary</p><p>start · compare · understand · choose · move forward · review</p></div>
+            <div><p className="field-label">Avoid by default</p><p>disruptive · revolutionary · leading · unmissable · 360° solution</p></div>
           </div>
         </section>
 
         <section className="chapter tab-panel" id="panel-visual" role="tabpanel" aria-labelledby="tab-visual" hidden={activeTab !== "visual"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Forma</p>
-              <h2 id="visual-title">Identidade visual</h2>
+              <p className="eyebrow">Form</p>
+              <h2 id="visual-title">Visual identity</h2>
             </div>
-            <p>Uma gramática mínima: cor que orienta, tipografia que hierarquiza e espaço que cria ritmo.</p>
+            <p>A minimal grammar: color that guides, typography that prioritizes, and space that creates rhythm.</p>
           </div>
 
           <div className="visual-rule">
-            <div className="mark-demo"><span>[MARCA]</span><i /></div>
+            <div className="mark-demo"><span>[BRAND]</span><i /></div>
             <div>
-              <p className="field-label">Assinatura placeholder</p>
-              <h3>O nome é variável.<br />A proporção é a regra.</h3>
-              <p>A área livre ao redor da assinatura equivale à altura do sinal circular. Nunca comprimir, inclinar ou preencher com efeitos.</p>
+              <p className="field-label">Placeholder signature</p>
+              <h3>The name is variable.<br />Proportion is the rule.</h3>
+              <p>Clear space around the signature equals the height of the circular signal. Never compress, skew, or fill it with effects.</p>
             </div>
           </div>
 
           <div className="token-group">
-            <div className="token-title"><p className="eyebrow">Tokens / Cor</p><p>Função antes de preferência.</p></div>
+            <div className="token-title"><p className="eyebrow">Tokens / Color</p><p>Function before preference.</p></div>
             <div className="swatches">
               <Swatch name="Ink" hex="#182126" className="ink" />
               <Swatch name="Paper" hex="#F3F4EF" className="paper" />
@@ -295,17 +295,17 @@ export default function Home() {
           </div>
 
           <div className="type-specimen">
-            <div className="token-title"><p className="eyebrow">Tokens / Tipografia</p><p>Do argumento à evidência.</p></div>
+            <div className="token-title"><p className="eyebrow">Tokens / Typography</p><p>From argument to evidence.</p></div>
             <div className="type-grid">
               <div className="type-display"><span>Display / Editorial</span><p>Aa</p><code>Georgia · 400 · −0.04em</code></div>
-              <div className="type-body"><span>Texto / Leitura</span><p>A clareza começa na distância certa entre as ideias.</p><code>Geist Sans · 400 · 1.55</code></div>
-              <div className="type-utility"><span>UTILITÁRIO / DADOS</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>Geist Mono · 500</code></div>
+              <div className="type-body"><span>Body / Reading</span><p>Clarity begins with the right distance between ideas.</p><code>Geist Sans · 400 · 1.55</code></div>
+              <div className="type-utility"><span>UTILITY / DATA</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>Geist Mono · 500</code></div>
             </div>
           </div>
 
           <div className="token-matrix">
             <div className="matrix-block spacing-block">
-              <p className="eyebrow">Espaçamento</p>
+              <p className="eyebrow">Spacing</p>
               <div><i style={{ width: 4 }} /><code>space-1 · 4px</code></div>
               <div><i style={{ width: 8 }} /><code>space-2 · 8px</code></div>
               <div><i style={{ width: 16 }} /><code>space-4 · 16px</code></div>
@@ -313,195 +313,195 @@ export default function Home() {
               <div><i style={{ width: 64 }} /><code>space-16 · 64px</code></div>
             </div>
             <div className="matrix-block radius-block">
-              <p className="eyebrow">Raios</p>
+              <p className="eyebrow">Radii</p>
               <div><i className="radius-sm" /><code>radius-sm · 4px</code></div>
               <div><i className="radius-md" /><code>radius-md · 12px</code></div>
               <div><i className="radius-full" /><code>radius-full</code></div>
             </div>
             <div className="matrix-block shadow-block">
-              <p className="eyebrow">Sombras</p>
+              <p className="eyebrow">Shadows</p>
               <div><i className="shadow-soft" /><code>shadow-soft</code></div>
               <div><i className="shadow-lift" /><code>shadow-lift</code></div>
             </div>
           </div>
         </section>
 
-        <section className="chapter image-system tab-panel" id="panel-imagem" role="tabpanel" aria-labelledby="tab-imagem" hidden={activeTab !== "imagem"}>
+        <section className="chapter image-system tab-panel" id="panel-imagery" role="tabpanel" aria-labelledby="tab-imagery" hidden={activeTab !== "imagery"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Direção</p>
-              <h2 id="imagem-title">Sistema de imagem</h2>
+              <p className="eyebrow">Direction</p>
+              <h2 id="imagery-title">Imagery system</h2>
             </div>
-            <p>Imagens devem revelar relações — nunca funcionar como decoração genérica.</p>
+            <p>Images should reveal relationships—never act as generic decoration.</p>
           </div>
           <div className="image-gallery">
             <figure className="image-placeholder image-a">
               <div className="crop-marks"><span /><span /><span /><span /></div>
               <div className="orb orb-a" /><div className="orb orb-b" />
-              <figcaption><b>01 / Presença</b><span>Uma relação clara entre sujeito e espaço.</span></figcaption>
+              <figcaption><b>01 / Presence</b><span>A clear relationship between subject and space.</span></figcaption>
             </figure>
             <figure className="image-placeholder image-b">
               <div className="crop-marks"><span /><span /><span /><span /></div>
               <div className="light-shape" />
-              <figcaption><b>02 / Material</b><span>Textura real, luz direcional, detalhe próximo.</span></figcaption>
+              <figcaption><b>02 / Material</b><span>Real texture, directional light, close detail.</span></figcaption>
             </figure>
             <figure className="image-placeholder image-c">
               <div className="crop-marks"><span /><span /><span /><span /></div>
               <div className="image-type">Aa</div>
-              <figcaption><b>03 / Intervenção</b><span>Cor como comentário, não como filtro.</span></figcaption>
+              <figcaption><b>03 / Intervention</b><span>Color as commentary, not as a filter.</span></figcaption>
             </figure>
           </div>
           <div className="image-rules">
-            <div><span className="do">FAZER</span><p>Mostrar ação, imperfeição e contexto suficiente para entender a cena.</p></div>
-            <div><span className="dont">EVITAR</span><p>Banco de imagem óbvio, gestos encenados e filtros que anulam tons de pele.</p></div>
+            <div><span className="do">DO</span><p>Show action, imperfection, and enough context to understand the scene.</p></div>
+            <div><span className="dont">AVOID</span><p>Obvious stock imagery, staged gestures, and filters that flatten skin tones.</p></div>
           </div>
         </section>
 
         <section className="chapter motion tab-panel" id="panel-motion" role="tabpanel" aria-labelledby="tab-motion" hidden={activeTab !== "motion"}>
           <div className="section-head light">
             <div>
-              <p className="eyebrow">Tempo & atmosfera</p>
-              <h2 id="motion-title">Motion e som</h2>
+              <p className="eyebrow">Time & atmosphere</p>
+              <h2 id="motion-title">Motion & sound</h2>
             </div>
-            <p>Movimento explica mudança. Som confirma ação — sempre opcional, nunca intrusivo.</p>
+            <p>Motion explains change. Sound confirms action—always optional, never intrusive.</p>
           </div>
-          <div className="motion-stage" aria-label="Demonstração de movimento reduzido e intencional">
-            <div className="motion-orbit"><i /><span>Transformação contínua</span></div>
+          <div className="motion-stage" aria-label="Intentional, reduced-motion demonstration">
+            <div className="motion-orbit"><i /><span>Continuous transformation</span></div>
             <div className="motion-copy">
-              <p className="field-label">Princípio de movimento</p>
-              <h3>Entrar com direção.<br />Permanecer em repouso.</h3>
-              <p>Transições curtas esclarecem causa e efeito. Movimentos ambientes são raros e respeitam a preferência de reduzir animações.</p>
+              <p className="field-label">Motion principle</p>
+              <h3>Enter with direction.<br />Remain at rest.</h3>
+              <p>Short transitions clarify cause and effect. Ambient motion is rare and respects reduced-motion preferences.</p>
             </div>
           </div>
           <div className="motion-tokens">
-            <div><span>Rápido</span><b>160 ms</b><i className="m-fast" /></div>
-            <div><span>Padrão</span><b>280 ms</b><i className="m-base" /></div>
-            <div><span>Expressivo</span><b>520 ms</b><i className="m-slow" /></div>
-            <div><span>Curva</span><b>0.2, 0, 0, 1</b><i className="m-curve" /></div>
+            <div><span>Fast</span><b>160 ms</b><i className="m-fast" /></div>
+            <div><span>Standard</span><b>280 ms</b><i className="m-base" /></div>
+            <div><span>Expressive</span><b>520 ms</b><i className="m-slow" /></div>
+            <div><span>Easing</span><b>0.2, 0, 0, 1</b><i className="m-curve" /></div>
           </div>
           <div className="sound-note">
             <div className="sound-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
-            <div><p className="field-label">Assinatura sonora / placeholder</p><p>Três notas, ataque suave, menos de 1 segundo. Usar somente como confirmação escolhida pela pessoa.</p></div>
+            <div><p className="field-label">Sonic signature / placeholder</p><p>Three notes, soft attack, under one second. Use only as a user-enabled confirmation.</p></div>
           </div>
         </section>
 
-        <section className="chapter tab-panel" id="panel-dados" role="tabpanel" aria-labelledby="tab-dados" hidden={activeTab !== "dados"}>
+        <section className="chapter tab-panel" id="panel-data" role="tabpanel" aria-labelledby="tab-data" hidden={activeTab !== "data"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Evidência</p>
-              <h2 id="dados-title">Linguagem de informação e dados</h2>
+              <p className="eyebrow">Evidence</p>
+              <h2 id="data-title">Information & data language</h2>
             </div>
-            <p>Dados não decoram argumentos. Eles tornam diferenças legíveis e decisões verificáveis.</p>
+            <p>Data does not decorate arguments. It makes differences legible and decisions verifiable.</p>
           </div>
           <div className="data-grid">
             <div className="data-story">
-              <p className="field-label">Exemplo fictício / Índice relativo</p>
+              <p className="field-label">Fictional example / Relative index</p>
               <div className="big-data"><strong>72</strong><span>/100</span></div>
-              <p>Nomeie a métrica, declare o período e explique o que muda para quem lê.</p>
+              <p>Name the metric, state the period, and explain what changes for the reader.</p>
             </div>
-            <div className="bar-chart" aria-label="Gráfico ilustrativo com valores fictícios: clareza 72, confiança 58, distinção 86">
-              <div><span>Clareza</span><i><b style={{ width: "72%" }} /></i><em>72</em></div>
-              <div><span>Confiança</span><i><b style={{ width: "58%" }} /></i><em>58</em></div>
-              <div><span>Distinção</span><i><b style={{ width: "86%" }} /></i><em>86</em></div>
-              <p>Base ilustrativa · sem dados reais</p>
+            <div className="bar-chart" aria-label="Illustrative chart with fictional values: clarity 72, trust 58, distinction 86">
+              <div><span>Clarity</span><i><b style={{ width: "72%" }} /></i><em>72</em></div>
+              <div><span>Trust</span><i><b style={{ width: "58%" }} /></i><em>58</em></div>
+              <div><span>Distinction</span><i><b style={{ width: "86%" }} /></i><em>86</em></div>
+              <p>Illustrative baseline · no real data</p>
             </div>
           </div>
           <ul className="data-rules">
-            <li><b>Dê contexto.</b><span>Valor, unidade, período e fonte aparecem juntos.</span></li>
-            <li><b>Use cor com redundância.</b><span>Rótulos e padrões sustentam o significado.</span></li>
-            <li><b>Não dramatize.</b><span>Escalas começam no zero quando a comparação exige.</span></li>
+            <li><b>Provide context.</b><span>Value, unit, period, and source appear together.</span></li>
+            <li><b>Use redundant color cues.</b><span>Labels and patterns reinforce meaning.</span></li>
+            <li><b>Do not dramatize.</b><span>Scales start at zero when the comparison requires it.</span></li>
           </ul>
         </section>
 
-        <section className="chapter accessibility tab-panel" id="panel-acessibilidade" role="tabpanel" aria-labelledby="tab-acessibilidade" hidden={activeTab !== "acessibilidade"}>
+        <section className="chapter accessibility tab-panel" id="panel-accessibility" role="tabpanel" aria-labelledby="tab-accessibility" hidden={activeTab !== "accessibility"}>
           <div className="section-head light">
             <div>
-              <p className="eyebrow">Responsabilidade</p>
-              <h2 id="access-title">Acessibilidade e limites</h2>
+              <p className="eyebrow">Responsibility</p>
+              <h2 id="access-title">Accessibility & boundaries</h2>
             </div>
-            <p>Reconhecimento de marca não pode depender de excluir pessoas.</p>
+            <p>Brand recognition cannot depend on excluding people.</p>
           </div>
           <div className="access-grid">
             <div className="contrast-demo">
-              <p className="field-label">Contraste de texto</p>
+              <p className="field-label">Text contrast</p>
               <div className="contrast-pair"><span>Aa</span><div><b>Ink / Paper</b><p>15.1:1 · AAA</p></div></div>
               <div className="contrast-pair inverse"><span>Aa</span><div><b>Paper / Ink</b><p>15.1:1 · AAA</p></div></div>
             </div>
             <div className="access-list">
-              <div><b>Leitura</b><p>Corpo mínimo de 16px; linhas entre 45 e 80 caracteres.</p></div>
-              <div><b>Interação</b><p>Foco visível, ordem lógica e alvos de toque de pelo menos 40px.</p></div>
-              <div><b>Movimento</b><p>Nenhuma informação depende apenas de animação ou áudio.</p></div>
-              <div><b>Linguagem</b><p>Frases diretas, alternativas textuais e termos não excludentes.</p></div>
+              <div><b>Reading</b><p>Minimum 16px body text; lines between 45 and 80 characters.</p></div>
+              <div><b>Interaction</b><p>Visible focus, logical order, and touch targets of at least 40px.</p></div>
+              <div><b>Motion</b><p>No information depends on animation or audio alone.</p></div>
+              <div><b>Language</b><p>Direct sentences, text alternatives, and non-exclusionary terms.</p></div>
             </div>
           </div>
           <div className="limits">
-            <p className="field-label">Limites de uso</p>
+            <p className="field-label">Usage boundaries</p>
             <div>
-              <p><b>Não usar a marca para:</b> criar urgência artificial, ocultar condições, sugerir certeza onde existe risco ou ornamentar informação crítica.</p>
-              <p><b>Escalar quando:</b> uma aplicação envolve públicos vulneráveis, alto impacto, contexto cultural sensível ou uma exceção não prevista aqui.</p>
+              <p><b>Never use the brand to:</b> create artificial urgency, hide conditions, imply certainty where risk exists, or decorate critical information.</p>
+              <p><b>Escalate when:</b> an application involves vulnerable audiences, high impact, sensitive cultural context, or an exception not covered here.</p>
             </div>
           </div>
         </section>
 
-        <section className="chapter channels tab-panel" id="panel-canais" role="tabpanel" aria-labelledby="tab-canais" hidden={activeTab !== "canais"}>
+        <section className="chapter channels tab-panel" id="panel-channels" role="tabpanel" aria-labelledby="tab-channels" hidden={activeTab !== "channels"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Adaptação</p>
-              <h2 id="channels-title">Perfis por canal</h2>
+              <p className="eyebrow">Adaptation</p>
+              <h2 id="channels-title">Channel profiles</h2>
             </div>
-            <p>O canal muda a intensidade e o formato. A ideia central, a voz e os limites permanecem.</p>
+            <p>The channel changes intensity and format. The central idea, voice, and boundaries remain.</p>
           </div>
           <div className="channel-constant">
-            <p className="field-label">Regra de adaptação</p>
-            <p><b>Preservar:</b> promessa, princípios, vocabulário essencial, contraste e critérios éticos.</p>
-            <p><b>Adaptar:</b> densidade, ritmo, proporção, chamada para ação e grau de expressividade.</p>
+            <p className="field-label">Adaptation rule</p>
+            <p><b>Preserve:</b> promise, principles, essential vocabulary, contrast, and ethical criteria.</p>
+            <p><b>Adapt:</b> density, rhythm, proportion, call to action, and degree of expressiveness.</p>
           </div>
           <div className="channel-grid">
             <article className="channel-card channel-deck">
-              <span>APRESENTAÇÕES</span><h3>Uma ideia por quadro.</h3>
-              <ul><li>Começar pela decisão</li><li>30–60 palavras por slide</li><li>Dados com conclusão explícita</li><li>Imagem como evidência</li></ul>
+              <span>PRESENTATIONS</span><h3>One idea per frame.</h3>
+              <ul><li>Lead with the decision</li><li>30–60 words per slide</li><li>Data with an explicit conclusion</li><li>Imagery as evidence</li></ul>
             </article>
             <article className="channel-card channel-proposal">
-              <span>PROPOSTAS</span><h3>Clareza antes da persuasão.</h3>
-              <ul><li>Contexto → abordagem → prova</li><li>Escopo sem ambiguidades</li><li>Tom seguro, não grandioso</li><li>Próximo passo inequívoco</li></ul>
+              <span>PROPOSALS</span><h3>Clarity before persuasion.</h3>
+              <ul><li>Context → approach → proof</li><li>Unambiguous scope</li><li>Confident, not grandiose</li><li>Unmistakable next step</li></ul>
             </article>
             <article className="channel-card channel-social">
-              <span>SOCIAL</span><h3>Uma tensão, um gesto.</h3>
-              <ul><li>Gancho específico</li><li>Ritmo mais expressivo</li><li>Texto curto na arte</li><li>Legenda aprofunda</li></ul>
+              <span>SOCIAL</span><h3>One tension, one gesture.</h3>
+              <ul><li>Specific hook</li><li>More expressive rhythm</li><li>Short on-image copy</li><li>Caption adds depth</li></ul>
             </article>
             <article className="channel-card channel-web">
-              <span>WEB</span><h3>Orientar, provar, convidar.</h3>
-              <ul><li>Hierarquia responsiva</li><li>CTAs com verbos concretos</li><li>Motion explica mudança</li><li>Acessibilidade por padrão</li></ul>
+              <span>WEB</span><h3>Guide, prove, invite.</h3>
+              <ul><li>Responsive hierarchy</li><li>CTAs with concrete verbs</li><li>Motion explains change</li><li>Accessibility by default</li></ul>
             </article>
             <article className="channel-card channel-bi">
-              <span>BI & DADOS</span><h3>A leitura termina em decisão.</h3>
-              <ul><li>KPI com período e unidade</li><li>Cor semântica e redundante</li><li>Precisão proporcional</li><li>Anotar desvios relevantes</li></ul>
+              <span>BI & DATA</span><h3>Reading ends in a decision.</h3>
+              <ul><li>KPI with period and unit</li><li>Semantic, redundant color</li><li>Proportional precision</li><li>Annotate relevant deviations</li></ul>
             </article>
           </div>
           <div className="channel-prompt">
-            <span>PROMPT DE CANAL</span>
-            <p>“Aplique o perfil <b>[canal]</b>. Preserve os invariantes da marca e adapte apenas as propriedades declaradas como flexíveis.”</p>
+            <span>CHANNEL PROMPT</span>
+            <p>“Apply the <b>[channel]</b> profile. Preserve brand invariants and adapt only the properties declared as flexible.”</p>
           </div>
         </section>
 
-        <section className="chapter implementation tab-panel" id="panel-implementacao" role="tabpanel" aria-labelledby="tab-implementacao" hidden={activeTab !== "implementacao"}>
+        <section className="chapter implementation tab-panel" id="panel-ai-contract" role="tabpanel" aria-labelledby="tab-ai-contract" hidden={activeTab !== "ai-contract"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Camada operacional</p>
-              <h2 id="implementation-title">Contrato para IA</h2>
+              <p className="eyebrow">Operational layer</p>
+              <h2 id="implementation-title">AI contract</h2>
             </div>
-            <p>A página explica a marca para pessoas. Os arquivos estruturados entregam as mesmas decisões aos agentes.</p>
+            <p>The page explains the brand to people. Structured files deliver the same decisions to agents.</p>
           </div>
-          <div className="system-flow" aria-label="Relação entre Brand DNA, design tokens e implementação por canal">
-            <article className="flow-dna"><span>01 / Significado</span><h3>Brand DNA</h3><p>Essência, princípios, voz, imagem e comportamento.</p></article>
+          <div className="system-flow" aria-label="Relationship between Brand DNA, design tokens, and channel implementation">
+            <article className="flow-dna"><span>01 / Meaning</span><h3>Brand DNA</h3><p>Essence, principles, voice, imagery, and behavior.</p></article>
             <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-tokens"><span>02 / Contrato</span><h3>Regras + tokens</h3><p>Invariantes, preferências, limites, exemplos e valores.</p></article>
+            <article className="flow-tokens"><span>02 / Contract</span><h3>Rules + tokens</h3><p>Invariants, preferences, boundaries, examples, and values.</p></article>
             <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-channels"><span>03 / Execução</span><h3>Agente + canal</h3><ul><li>Seleciona o perfil</li><li>Produz o material</li><li>Valida as regras</li><li>Registra exceções</li></ul></article>
+            <article className="flow-channels"><span>03 / Execution</span><h3>Agent + channel</h3><ul><li>Selects the profile</li><li>Produces the material</li><li>Validates the rules</li><li>Records exceptions</li></ul></article>
           </div>
           <div className="machine-grid">
             <div className="file-tree">
-              <p className="field-label">Pacote canônico</p>
+              <p className="field-label">Canonical package</p>
               <pre>{`brand/
 ├── brand-dna.yaml
 ├── tokens.json
@@ -510,79 +510,79 @@ export default function Home() {
 └── validation-checklist.yaml`}</pre>
             </div>
             <div className="contract-anatomy">
-              <p className="field-label">Anatomia de cada regra</p>
+              <p className="field-label">Anatomy of each rule</p>
               <dl>
-                <div><dt>intent</dt><dd>Por que a regra existe</dd></div>
-                <div><dt>invariants</dt><dd>O que nunca muda</dd></div>
-                <div><dt>preferences</dt><dd>O padrão recomendado</dd></div>
-                <div><dt>avoid</dt><dd>O que não produzir</dd></div>
-                <div><dt>examples</dt><dd>Pares aprovados e negativos</dd></div>
-                <div><dt>overrides</dt><dd>Exceções por canal</dd></div>
+                <div><dt>intent</dt><dd>Why the rule exists</dd></div>
+                <div><dt>invariants</dt><dd>What never changes</dd></div>
+                <div><dt>preferences</dt><dd>The recommended default</dd></div>
+                <div><dt>avoid</dt><dd>What not to produce</dd></div>
+                <div><dt>examples</dt><dd>Approved and negative pairs</dd></div>
+                <div><dt>overrides</dt><dd>Channel-specific exceptions</dd></div>
               </dl>
             </div>
           </div>
           <div className="download-group">
             <div>
-              <p className="field-label">Arquivos de exemplo</p>
-              <h3>Prontos para conectar a um agente.</h3>
+              <p className="field-label">Example files</p>
+              <h3>Ready to connect to an agent.</h3>
             </div>
             <div className="download-list">
-              <a href="/brand/brand-dna.yaml" download><span>DNA estruturado</span><code>.yaml ↓</code></a>
+              <a href="/brand/brand-dna.yaml" download><span>Structured DNA</span><code>.yaml ↓</code></a>
               <a href="/brand/tokens.json" download><span>Design tokens</span><code>.json ↓</code></a>
-              <a href="/brand/channel-profiles.yaml" download><span>Perfis por canal</span><code>.yaml ↓</code></a>
-              <a href="/brand/assets-manifest.json" download><span>Catálogo de ativos</span><code>.json ↓</code></a>
-              <a href="/brand/validation-checklist.yaml" download><span>Checklist de validação</span><code>.yaml ↓</code></a>
+              <a href="/brand/channel-profiles.yaml" download><span>Channel profiles</span><code>.yaml ↓</code></a>
+              <a href="/brand/assets-manifest.json" download><span>Asset catalog</span><code>.json ↓</code></a>
+              <a href="/brand/validation-checklist.yaml" download><span>Validation checklist</span><code>.yaml ↓</code></a>
             </div>
           </div>
           <div className="scope-note">
-            <span>REGRA DE CONFLITO</span>
-            <p>Verdade e acessibilidade vencem expressão. Invariantes vencem preferências. O perfil do canal só pode alterar o que estiver marcado como flexível.</p>
+            <span>CONFLICT RULE</span>
+            <p>Truth and accessibility outrank expression. Invariants outrank preferences. A channel profile may change only what is marked as flexible.</p>
           </div>
         </section>
 
-        <section className="chapter governance tab-panel" id="panel-governanca" role="tabpanel" aria-labelledby="tab-governanca" hidden={activeTab !== "governanca"}>
+        <section className="chapter governance tab-panel" id="panel-governance" role="tabpanel" aria-labelledby="tab-governance" hidden={activeTab !== "governance"}>
           <div className="section-head light">
             <div>
-              <p className="eyebrow">Manutenção</p>
-              <h2 id="governance-title">Governança</h2>
+              <p className="eyebrow">Maintenance</p>
+              <h2 id="governance-title">Governance</h2>
             </div>
-            <p>Uma fonte de verdade só permanece confiável quando decisões, responsáveis e mudanças ficam visíveis.</p>
+            <p>A source of truth stays reliable only when decisions, owners, and changes remain visible.</p>
           </div>
           <div className="version-card">
-            <div><span>VERSÃO ATUAL</span><strong>1.1</strong></div>
+            <div><span>CURRENT VERSION</span><strong>1.2</strong></div>
             <dl>
-              <div><dt>Status</dt><dd>Aprovado para uso</dd></div>
-              <div><dt>Responsável</dt><dd>[Time ou pessoa proprietária]</dd></div>
-              <div><dt>Revisão</dt><dd>[AAAA-MM-DD]</dd></div>
-              <div><dt>Próxima revisão</dt><dd>[AAAA-MM-DD]</dd></div>
+              <div><dt>Status</dt><dd>Approved for use</dd></div>
+              <div><dt>Owner</dt><dd>[Owning team or person]</dd></div>
+              <div><dt>Reviewed</dt><dd>[YYYY-MM-DD]</dd></div>
+              <div><dt>Next review</dt><dd>[YYYY-MM-DD]</dd></div>
             </dl>
           </div>
           <div className="governance-grid">
-            <article><span>APROVADO</span><h3>Regra canônica</h3><p>Pode orientar pessoas e agentes em materiais finais.</p></article>
-            <article><span>EXPERIMENTAL</span><h3>Hipótese em teste</h3><p>Usar em escopo controlado e registrar resultados.</p></article>
-            <article><span>OBSOLETO</span><h3>Não utilizar</h3><p>Permanece no histórico, nunca no contexto ativo do agente.</p></article>
+            <article><span>APPROVED</span><h3>Canonical rule</h3><p>May guide people and agents in final materials.</p></article>
+            <article><span>EXPERIMENTAL</span><h3>Hypothesis in testing</h3><p>Use within a controlled scope and record results.</p></article>
+            <article><span>DEPRECATED</span><h3>Do not use</h3><p>Keep in history, never in the agent’s active context.</p></article>
           </div>
           <div className="approval-flow">
-            <p className="field-label">Fluxo de exceção</p>
-            <ol><li><b>01</b><span>Identificar conflito</span></li><li><b>02</b><span>Registrar contexto</span></li><li><b>03</b><span>Aprovar responsável</span></li><li><b>04</b><span>Atualizar a fonte</span></li></ol>
+            <p className="field-label">Exception flow</p>
+            <ol><li><b>01</b><span>Identify conflict</span></li><li><b>02</b><span>Record context</span></li><li><b>03</b><span>Obtain owner approval</span></li><li><b>04</b><span>Update the source</span></li></ol>
           </div>
           <div className="checklist-preview">
-            <p className="field-label">Antes de publicar</p>
+            <p className="field-label">Before publishing</p>
             <ul>
-              <li><span>✓</span> A promessa está correta e comprovável?</li>
-              <li><span>✓</span> O perfil do canal foi aplicado?</li>
-              <li><span>✓</span> Voz, imagem e dados respeitam os invariantes?</li>
-              <li><span>✓</span> Contraste, leitura e movimento estão acessíveis?</li>
-              <li><span>✓</span> Ativos usados constam como aprovados?</li>
-              <li><span>✓</span> Exceções foram registradas?</li>
+              <li><span>✓</span> Is the promise accurate and supportable?</li>
+              <li><span>✓</span> Was the correct channel profile applied?</li>
+              <li><span>✓</span> Do voice, imagery, and data respect the invariants?</li>
+              <li><span>✓</span> Are contrast, reading, and motion accessible?</li>
+              <li><span>✓</span> Are all assets marked as approved?</li>
+              <li><span>✓</span> Were exceptions documented?</li>
             </ul>
           </div>
         </section>
 
         <footer>
           <div className="footer-mark"><span>DNA</span><i /></div>
-          <p>Template fictício para futuras fontes de verdade de marca.</p>
-          <button type="button" onClick={() => selectTab("inicio")}>Visão geral <span aria-hidden="true">→</span></button>
+          <p>Fictional template for future brand sources of truth.</p>
+          <button type="button" onClick={() => selectTab("overview")}>Overview <span aria-hidden="true">→</span></button>
         </footer>
       </div>
     </main>

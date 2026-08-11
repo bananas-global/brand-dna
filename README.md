@@ -1,100 +1,58 @@
-# vinext-starter
+# Brand DNA — Master Template
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+An editorial, reusable source-of-truth template for documenting how a brand thinks, speaks, looks, moves, and adapts across channels.
 
-## Prerequisites
+The project serves two audiences:
 
-- Node.js `>=22.13.0`
+- People use the tabbed website to understand the brand system and its decision logic.
+- AI agents use the structured files under `public/brand/` to generate and validate brand-aligned materials.
 
-## Quick Start
+The content is intentionally fictional and neutral. Replace the placeholders with approved client decisions; do not treat the example values as a real brand.
+
+## What is included
+
+- Brand essence, positioning, audiences, and decision priorities
+- Expression principles and voice guidelines
+- Visual, imagery, motion, sound, and data foundations
+- Accessibility and ethical boundaries
+- Profiles for presentations, proposals, social, web, and BI
+- Machine-readable Brand DNA, tokens, channel profiles, asset manifest, and validation checklist
+- Governance, status, ownership, and exception handling
+
+The project intentionally does not include an extensive UI component library. Channel-specific components belong in their respective implementation systems.
+
+## Run locally
+
+Requirements: Node.js `>=22.13.0`.
 
 ```bash
 npm install
 npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Validate
+
+```bash
 npm run build
+npm run lint
+node --test tests/rendered-html.test.mjs
 ```
 
-This starter does not use `wrangler.jsonc`.
+## Structured brand package
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```text
+public/brand/
+├── brand-dna.yaml
+├── tokens.json
+├── channel-profiles.yaml
+├── assets-manifest.json
+└── validation-checklist.yaml
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Keep the human-facing documentation and machine-readable files synchronized. In a conflict, truth and accessibility outrank expression; invariants outrank preferences; channel profiles may modify only properties explicitly marked as flexible.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## License
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Add the open-source license selected by the project owner before redistributing the repository.

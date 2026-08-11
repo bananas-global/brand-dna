@@ -14,18 +14,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: baseUrl,
-    title: "Brand DNA — Template mestre",
-    description: "Uma fonte de verdade de marca para pessoas e agentes.",
+    title: "Brand DNA — Master Template",
+    description: "A brand source of truth for people and agents.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "Brand DNA — Template mestre",
-      description: "Uma fonte de verdade de marca para pessoas e agentes.",
-      images: [{ url: new URL("/og.png", baseUrl).toString(), width: 1200, height: 630, alt: "Brand DNA — fonte de verdade para pessoas e agentes" }],
+      title: "Brand DNA — Master Template",
+      description: "A brand source of truth for people and agents.",
+      images: [{ url: new URL("/og.png", baseUrl).toString(), width: 1200, height: 630, alt: "Brand DNA — a source of truth for people and agents" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Brand DNA — Template mestre",
-      description: "Uma fonte de verdade de marca para pessoas e agentes.",
+      title: "Brand DNA — Master Template",
+      description: "A brand source of truth for people and agents.",
       images: [new URL("/og.png", baseUrl).toString()],
     },
   };
@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="en-US">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
     </html>
   );

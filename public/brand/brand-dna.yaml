@@ -1,27 +1,27 @@
 schema_version: "1.0"
 brand:
-  name: "[NOME DA MARCA]"
+  name: "[BRAND NAME]"
   document_status: template
-  language: pt-BR
-  last_reviewed: "[AAAA-MM-DD]"
-  owner: "[TIME OU PESSOA RESPONSÁVEL]"
+  language: en-US
+  last_reviewed: "[YYYY-MM-DD]"
+  owner: "[OWNING TEAM OR PERSON]"
 
 essence:
-  central_idea: "[Uma verdade curta que orienta todas as escolhas.]"
-  purpose: "[A mudança concreta que a marca quer habilitar.]"
-  role: "[Como ela participa da vida das pessoas.]"
-  tension: "[O conflito cultural ou humano que ajuda a resolver.]"
-  promise: "[A experiência que deve se repetir em cada contato.]"
+  central_idea: "[A short truth that guides every choice.]"
+  purpose: "[The concrete change the brand wants to enable.]"
+  role: "[How it participates in people’s lives.]"
+  tension: "[The cultural or human conflict it helps resolve.]"
+  promise: "[The experience that should repeat at every touchpoint.]"
 
 positioning:
-  statement: "Para [público], somos [categoria] que [benefício], porque [prova]."
+  statement: "For [audience], we are the [category] that [benefit], because [proof]."
   primary_audience:
-    description: "[Quem vive o problema e escolhe a solução.]"
+    description: "[Who experiences the problem and chooses the solution.]"
     needs: []
     barriers: []
     decision_criteria: []
   influencing_audience:
-    description: "[Quem recomenda, aprova ou viabiliza.]"
+    description: "[Who recommends, approves, or enables the decision.]"
     needs: []
     risks: []
 
@@ -33,65 +33,65 @@ decision_priority:
 
 expression_principles:
   - id: clear_not_simplistic
-    intent: "Reduzir esforço sem apagar nuance."
+    intent: "Reduce effort without erasing nuance."
     invariants:
-      - "Orientar antes de aprofundar."
+      - "Orient before going deeper."
     preferences:
-      - "Uma ideia principal por unidade de comunicação."
+      - "One main idea per unit of communication."
     avoid:
-      - "Simplificar a ponto de distorcer."
+      - "Simplifying to the point of distortion."
     examples:
-      approved: "Veja primeiro o que muda sua decisão."
-      negative: "Descubra um universo revolucionário de possibilidades."
+      approved: "See what changes your decision first."
+      negative: "Discover a revolutionary universe of possibilities."
   - id: human_not_forced
-    intent: "Demonstrar atenção sem simular intimidade."
+    intent: "Show attention without simulating intimacy."
     invariants:
-      - "Falar com pessoas, não com segmentos abstratos."
+      - "Speak to people, not abstract segments."
     preferences:
-      - "Usar voz ativa e verbos concretos."
+      - "Use active voice and concrete verbs."
     avoid:
-      - "Gírias ou intimidade não justificadas pelo contexto."
+      - "Slang or intimacy that the context does not justify."
   - id: vivid_not_noisy
-    intent: "Usar contraste para criar energia e hierarquia."
+    intent: "Use contrast to create energy and hierarchy."
     invariants:
-      - "Expressão nunca pode reduzir a compreensão."
+      - "Expression must never reduce comprehension."
     preferences:
-      - "Reservar intensidade para uma ideia por vez."
+      - "Reserve intensity for one idea at a time."
     avoid:
-      - "Competição entre múltiplos destaques."
+      - "Competition among multiple focal points."
 
 voice:
-  intent: "Dizer o essencial com precisão e deixar uma porta aberta."
+  intent: "Say what matters with precision and leave a door open."
   invariants:
-    - "Começar pela necessidade da pessoa."
-    - "Usar linguagem concreta."
-    - "Indicar um próximo passo possível."
+    - "Start with the person’s need."
+    - "Use concrete language."
+    - "Indicate a possible next step."
   preferences:
-    - "Frases curtas."
-    - "Voz ativa."
-    - "Nomes e verbos específicos."
+    - "Short sentences."
+    - "Active voice."
+    - "Specific nouns and verbs."
   preferred_vocabulary:
-    - começar
-    - comparar
-    - entender
-    - escolher
-    - avançar
-    - revisar
+    - start
+    - compare
+    - understand
+    - choose
+    - move_forward
+    - review
   avoid_vocabulary:
-    - disruptivo
-    - revolucionário
-    - líder
-    - imperdível
-    - solução 360º
+    - disruptive
+    - revolutionary
+    - leading
+    - unmissable
+    - 360_solution
 
 boundaries:
   never:
-    - "Criar urgência artificial."
-    - "Ocultar condições relevantes."
-    - "Sugerir certeza onde existe risco."
-    - "Usar expressão visual para ornamentar informação crítica."
+    - "Create artificial urgency."
+    - "Hide relevant conditions."
+    - "Imply certainty where risk exists."
+    - "Use visual expression to decorate critical information."
   escalate_when:
-    - "A aplicação envolve públicos vulneráveis."
-    - "Existe alto impacto financeiro, jurídico ou de saúde."
-    - "O contexto cultural é sensível."
-    - "A exceção não está prevista neste contrato."
+    - "The application involves vulnerable audiences."
+    - "There is high financial, legal, or health impact."
+    - "The cultural context is sensitive."
+    - "The exception is not covered by this contract."

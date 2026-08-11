@@ -2,35 +2,35 @@ schema_version: "1.0"
 result_values: [pass, fail, not_applicable, needs_review]
 checks:
   - id: strategy.promise
-    question: "A promessa utilizada está correta e é comprovável?"
+    question: "Is the promise accurate and supportable?"
     severity: blocking
   - id: strategy.audience
-    question: "O público e sua necessidade estão identificados?"
+    question: "Are the audience and its need identified?"
     severity: required
   - id: channel.profile
-    question: "O perfil correto de canal foi aplicado?"
+    question: "Was the correct channel profile applied?"
     severity: required
   - id: voice.invariants
-    question: "O texto respeita os invariantes de voz?"
+    question: "Does the copy respect the voice invariants?"
     severity: required
   - id: voice.jargon
-    question: "Jargões e superlativos sem evidência foram removidos?"
+    question: "Were jargon and unsupported superlatives removed?"
     severity: required
   - id: visual.assets
-    question: "Todos os ativos constam como aprovados no manifesto?"
+    question: "Are all assets marked as approved in the manifest?"
     severity: blocking
   - id: visual.tokens
-    question: "Cores, tipografia e espaçamento usam tokens canônicos?"
+    question: "Do color, typography, and spacing use canonical tokens?"
     severity: required
   - id: data.context
-    question: "Métricas declaram valor, unidade, período e fonte?"
+    question: "Do metrics state value, unit, period, and source?"
     severity: required
   - id: accessibility.contrast
-    question: "Contraste, legibilidade, foco e movimento estão acessíveis?"
+    question: "Are contrast, legibility, focus, and motion accessible?"
     severity: blocking
   - id: boundaries.ethics
-    question: "A peça evita urgência artificial, omissão e falsas certezas?"
+    question: "Does the material avoid artificial urgency, omission, and false certainty?"
     severity: blocking
   - id: governance.exception
-    question: "Exceções foram registradas e aprovadas?"
+    question: "Were exceptions documented and approved?"
     severity: required_if_applicable
