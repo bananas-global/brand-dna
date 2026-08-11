@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "status": "template",
+  "rules": {
+    "useOnlyApproved": true,
+    "expiredAssetsAllowed": false,
+    "missingAssetAction": "escalate"
+  },
+  "assets": [
+    {
+      "id": "logo-primary",
+      "type": "logo",
+      "status": "placeholder",
+      "formats": ["svg", "png"],
+      "usage": "Assinatura principal em aplicações institucionais.",
+      "source": "[URL_CANONICA]",
+      "updatedAt": "[AAAA-MM-DD]"
+    },
+    {
+      "id": "font-display",
+      "type": "font",
+      "status": "placeholder",
+      "formats": ["woff2"],
+      "usage": "Títulos editoriais e mensagens de alta hierarquia.",
+      "source": "[URL_CANONICA]",
+      "license": "[LICENCA]",
+      "updatedAt": "[AAAA-MM-DD]"
+    },
+    {
+      "id": "image-reference-set",
+      "type": "reference_collection",
+      "status": "placeholder",
+      "usage": "Exemplos aprovados para direção de imagem.",
+      "source": "[URL_CANONICA]",
+      "updatedAt": "[AAAA-MM-DD]"
+    }
+  ]
+}

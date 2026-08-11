@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -28,14 +29,35 @@ test("renderiza o template completo de Brand DNA", async () => {
   assert.match(html, /Motion e som/);
   assert.match(html, /Linguagem de informação e dados/);
   assert.match(html, /Acessibilidade e limites/);
-  assert.match(html, /Do DNA aos canais/);
+  assert.match(html, /Perfis por canal/);
+  assert.match(html, /Contrato para IA/);
+  assert.match(html, /Governança/);
 });
 
-test("mantém a navegação e o conteúdo fictício acessíveis", async () => {
+test("mantém a navegação por abas e o conteúdo fictício acessíveis", async () => {
   const html = await (await render()).text();
   assert.match(html, /href="#conteudo">Pular para o conteúdo/);
   assert.match(html, /aria-label="Navegação da página"/);
+  assert.match(html, /role="tablist"/);
+  assert.match(html, /role="tabpanel"/);
+  assert.match(html, /aria-selected="true"/);
   assert.match(html, /Placeholder neutro/);
   assert.match(html, /Base ilustrativa · sem dados reais/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
+});
+
+test("entrega o contrato estruturado para agentes", async () => {
+  const root = new URL("../public/brand/", import.meta.url);
+  const [dna, tokens, channels, assets, checklist] = await Promise.all([
+    readFile(new URL("brand-dna.yaml", root), "utf8"),
+    readFile(new URL("tokens.json", root), "utf8"),
+    readFile(new URL("channel-profiles.yaml", root), "utf8"),
+    readFile(new URL("assets-manifest.json", root), "utf8"),
+    readFile(new URL("validation-checklist.yaml", root), "utf8"),
+  ]);
+  assert.match(dna, /decision_priority:/);
+  assert.match(channels, /business_intelligence:/);
+  assert.match(checklist, /accessibility\.contrast/);
+  assert.equal(JSON.parse(tokens).meta.status, "template");
+  assert.equal(JSON.parse(assets).status, "template");
 });

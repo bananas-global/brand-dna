@@ -1,0 +1,97 @@
+schema_version: "1.0"
+brand:
+  name: "[NOME DA MARCA]"
+  document_status: template
+  language: pt-BR
+  last_reviewed: "[AAAA-MM-DD]"
+  owner: "[TIME OU PESSOA RESPONSÁVEL]"
+
+essence:
+  central_idea: "[Uma verdade curta que orienta todas as escolhas.]"
+  purpose: "[A mudança concreta que a marca quer habilitar.]"
+  role: "[Como ela participa da vida das pessoas.]"
+  tension: "[O conflito cultural ou humano que ajuda a resolver.]"
+  promise: "[A experiência que deve se repetir em cada contato.]"
+
+positioning:
+  statement: "Para [público], somos [categoria] que [benefício], porque [prova]."
+  primary_audience:
+    description: "[Quem vive o problema e escolhe a solução.]"
+    needs: []
+    barriers: []
+    decision_criteria: []
+  influencing_audience:
+    description: "[Quem recomenda, aprova ou viabiliza.]"
+    needs: []
+    risks: []
+
+decision_priority:
+  - truth
+  - clarity
+  - distinction
+  - channel_fit
+
+expression_principles:
+  - id: clear_not_simplistic
+    intent: "Reduzir esforço sem apagar nuance."
+    invariants:
+      - "Orientar antes de aprofundar."
+    preferences:
+      - "Uma ideia principal por unidade de comunicação."
+    avoid:
+      - "Simplificar a ponto de distorcer."
+    examples:
+      approved: "Veja primeiro o que muda sua decisão."
+      negative: "Descubra um universo revolucionário de possibilidades."
+  - id: human_not_forced
+    intent: "Demonstrar atenção sem simular intimidade."
+    invariants:
+      - "Falar com pessoas, não com segmentos abstratos."
+    preferences:
+      - "Usar voz ativa e verbos concretos."
+    avoid:
+      - "Gírias ou intimidade não justificadas pelo contexto."
+  - id: vivid_not_noisy
+    intent: "Usar contraste para criar energia e hierarquia."
+    invariants:
+      - "Expressão nunca pode reduzir a compreensão."
+    preferences:
+      - "Reservar intensidade para uma ideia por vez."
+    avoid:
+      - "Competição entre múltiplos destaques."
+
+voice:
+  intent: "Dizer o essencial com precisão e deixar uma porta aberta."
+  invariants:
+    - "Começar pela necessidade da pessoa."
+    - "Usar linguagem concreta."
+    - "Indicar um próximo passo possível."
+  preferences:
+    - "Frases curtas."
+    - "Voz ativa."
+    - "Nomes e verbos específicos."
+  preferred_vocabulary:
+    - começar
+    - comparar
+    - entender
+    - escolher
+    - avançar
+    - revisar
+  avoid_vocabulary:
+    - disruptivo
+    - revolucionário
+    - líder
+    - imperdível
+    - solução 360º
+
+boundaries:
+  never:
+    - "Criar urgência artificial."
+    - "Ocultar condições relevantes."
+    - "Sugerir certeza onde existe risco."
+    - "Usar expressão visual para ornamentar informação crítica."
+  escalate_when:
+    - "A aplicação envolve públicos vulneráveis."
+    - "Existe alto impacto financeiro, jurídico ou de saúde."
+    - "O contexto cultural é sensível."
+    - "A exceção não está prevista neste contrato."

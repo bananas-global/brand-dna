@@ -1,0 +1,50 @@
+schema_version: "1.0"
+rule:
+  preserve:
+    - promise
+    - expression_principles
+    - voice_invariants
+    - accessibility
+    - ethical_boundaries
+  flexible:
+    - density
+    - rhythm
+    - proportion
+    - call_to_action
+    - expressiveness
+
+profiles:
+  presentations:
+    job: "Conduzir uma decisão por uma sequência narrativa."
+    density: "30 a 60 palavras por slide, salvo anexos."
+    structure: [context, tension, evidence, proposal, next_step]
+    image_role: evidence
+    data_rule: "Todo gráfico deve declarar a conclusão."
+  proposals:
+    job: "Transformar entendimento em acordo claro."
+    tone: "Seguro, preciso e não grandioso."
+    structure: [context, approach, scope, evidence, investment, next_step]
+    invariants:
+      - "Escopo e condições não podem ser ambíguos."
+  social:
+    job: "Criar atenção relevante e abrir uma conversa."
+    rhythm: expressive
+    structure: [specific_hook, single_idea, useful_detail, invitation]
+    constraints:
+      - "Pouco texto dentro da arte."
+      - "A legenda aprofunda; não repete."
+  web:
+    job: "Orientar, provar e convidar à ação."
+    structure: [promise, relevance, proof, detail, action]
+    invariants:
+      - "Hierarquia responsiva."
+      - "Foco visível e contraste válido."
+      - "Motion explica mudança."
+  business_intelligence:
+    job: "Reduzir o tempo entre leitura e decisão."
+    density: high_but_scannable
+    invariants:
+      - "KPI inclui unidade e período."
+      - "Cor semântica possui redundância textual."
+      - "Escalas não dramatizam diferenças."
+      - "Desvios relevantes recebem anotação."

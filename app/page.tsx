@@ -1,13 +1,10 @@
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Brand DNA — Template mestre",
-  description:
-    "Um template editorial para documentar a essência, a expressão e os fundamentos de implementação de uma marca.",
-};
+import { useEffect, useState, type KeyboardEvent } from "react";
 
 const sections = [
-  ["essencia", "Essência"],
+  ["inicio", "Visão geral"],
+  ["essencia", "Estratégia"],
   ["expressao", "Expressão"],
   ["verbal", "Identidade verbal"],
   ["visual", "Identidade visual"],
@@ -15,8 +12,12 @@ const sections = [
   ["motion", "Motion & som"],
   ["dados", "Informação & dados"],
   ["acessibilidade", "Acessibilidade"],
-  ["implementacao", "DNA → canais"],
+  ["canais", "Perfis por canal"],
+  ["implementacao", "Contrato para IA"],
+  ["governanca", "Governança"],
 ] as const;
+
+type SectionId = (typeof sections)[number][0];
 
 const Swatch = ({ name, hex, className }: { name: string; hex: string; className: string }) => (
   <div className="swatch">
@@ -29,31 +30,76 @@ const Swatch = ({ name, hex, className }: { name: string; hex: string; className
 );
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<SectionId>("inicio");
+
+  useEffect(() => {
+    const syncWithHash = () => {
+      const hash = window.location.hash.slice(1) as SectionId;
+      if (sections.some(([id]) => id === hash)) setActiveTab(hash);
+    };
+    const frame = window.requestAnimationFrame(syncWithHash);
+    window.addEventListener("hashchange", syncWithHash);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", syncWithHash);
+    };
+  }, []);
+
+  const selectTab = (id: SectionId, updateUrl = true) => {
+    setActiveTab(id);
+    if (updateUrl) window.history.replaceState(null, "", `#${id}`);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = sections.length - 1;
+    let next = index;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") next = index === last ? 0 : index + 1;
+    else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = index === 0 ? last : index - 1;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = last;
+    else return;
+
+    event.preventDefault();
+    const [id] = sections[next];
+    selectTab(id);
+    document.getElementById(`tab-${id}`)?.focus();
+  };
+
   return (
     <main>
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
       <header className="topbar" aria-label="Cabeçalho do documento">
-        <a className="wordmark" href="#inicio" aria-label="Voltar ao início">
+        <button className="wordmark" type="button" onClick={() => selectTab("inicio")} aria-label="Abrir visão geral">
           <span>DNA</span><i aria-hidden="true" />
-        </a>
+        </button>
         <p>Template de sistema de marca</p>
         <div className="document-meta">
           <span>Base 00</span>
-          <span>v1.0</span>
+          <span>v1.1</span>
         </div>
       </header>
 
       <aside className="rail" aria-label="Navegação da página">
-        <p className="rail-label">Índice</p>
-        <nav>
-          <ol>
+        <p className="rail-label">Capítulos</p>
+        <nav aria-label="Capítulos do Brand DNA">
+          <ol role="tablist" aria-orientation="vertical">
             {sections.map(([id, label], index) => (
               <li key={id}>
-                <a href={`#${id}`}>
+                <button
+                  id={`tab-${id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  aria-controls={`panel-${id}`}
+                  tabIndex={activeTab === id ? 0 : -1}
+                  onClick={() => selectTab(id)}
+                  onKeyDown={(event) => handleTabKey(event, index)}
+                >
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   {label}
-                </a>
+                </button>
               </li>
             ))}
           </ol>
@@ -62,7 +108,7 @@ export default function Home() {
       </aside>
 
       <div className="page" id="conteudo">
-        <section className="hero" id="inicio" aria-labelledby="hero-title">
+        <section className="hero tab-panel" id="panel-inicio" role="tabpanel" aria-labelledby="tab-inicio" hidden={activeTab !== "inicio"}>
           <div className="hero-kicker reveal r1">
             <span>Documento vivo</span>
             <span>Uso fictício / modelo aberto</span>
@@ -86,7 +132,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter essence" id="essencia" aria-labelledby="essencia-title">
+        <section className="chapter essence tab-panel" id="panel-essencia" role="tabpanel" aria-labelledby="tab-essencia" hidden={activeTab !== "essencia"}>
           <div className="section-head">
             <div>
               <p className="eyebrow">Fundamento</p>
@@ -119,6 +165,32 @@ export default function Home() {
               </div>
             </dl>
           </div>
+          <div className="strategy-grid">
+            <article className="strategy-card strategy-position">
+              <p className="field-label">Posicionamento</p>
+              <h3>Para [público prioritário], somos [categoria] que [benefício distintivo], porque [prova].</h3>
+              <p>Uma frase comparável e verificável. Não é slogan nem texto publicitário.</p>
+            </article>
+            <article className="strategy-card">
+              <p className="field-label">Público primário</p>
+              <h3>[Quem vive o problema e escolhe a solução.]</h3>
+              <ul><li>Contexto e necessidades</li><li>Barreiras e objeções</li><li>Critérios de decisão</li></ul>
+            </article>
+            <article className="strategy-card">
+              <p className="field-label">Público influenciador</p>
+              <h3>[Quem recomenda, aprova ou viabiliza.]</h3>
+              <ul><li>O que precisa comprovar</li><li>Riscos que precisa reduzir</li><li>Linguagem que reconhece</li></ul>
+            </article>
+          </div>
+          <div className="decision-order">
+            <p className="field-label">Ordem de decisão para agentes</p>
+            <ol>
+              <li><span>01</span><b>Verdade</b><p>Nunca sacrificar precisão por impacto.</p></li>
+              <li><span>02</span><b>Clareza</b><p>Reduzir esforço antes de adicionar expressão.</p></li>
+              <li><span>03</span><b>Distinção</b><p>Aplicar a personalidade sem afetar compreensão.</p></li>
+              <li><span>04</span><b>Canal</b><p>Adaptar o formato, preservando os invariantes.</p></li>
+            </ol>
+          </div>
           <div className="brand-compass" aria-label="Bússola de posicionamento fictícia">
             <div className="axis axis-x"><span>Próxima</span><span>Referencial</span></div>
             <div className="axis axis-y"><span>Calma</span><span>Expressiva</span></div>
@@ -126,7 +198,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter" id="expressao" aria-labelledby="expressao-title">
+        <section className="chapter tab-panel" id="panel-expressao" role="tabpanel" aria-labelledby="tab-expressao" hidden={activeTab !== "expressao"}>
           <div className="section-head">
             <div>
               <p className="eyebrow">Comportamento</p>
@@ -154,9 +226,13 @@ export default function Home() {
               <div className="range"><i style={{ left: "61%" }} /><span>Contida</span><span>Intensa</span></div>
             </article>
           </div>
+          <div className="example-pair">
+            <article className="example-approved"><span>FUNCIONA</span><h3>“Veja primeiro o que muda sua decisão.”</h3><p>Direto, humano e com hierarquia clara.</p></article>
+            <article className="example-avoid"><span>EVITAR</span><h3>“Descubra um universo revolucionário de possibilidades.”</h3><p>Grandioso sem evidência, genérico e ruidoso.</p></article>
+          </div>
         </section>
 
-        <section className="chapter verbal" id="verbal" aria-labelledby="verbal-title">
+        <section className="chapter verbal tab-panel" id="panel-verbal" role="tabpanel" aria-labelledby="tab-verbal" hidden={activeTab !== "verbal"}>
           <div className="section-head light">
             <div>
               <p className="eyebrow">Linguagem</p>
@@ -183,9 +259,13 @@ export default function Home() {
             <div className="tone-row" role="row"><b role="cell">Celebrar</b><span role="cell">Energia + medida</span><p role="cell">“Tudo pronto. Seu próximo passo já está aberto.”</p></div>
             <div className="tone-row" role="row"><b role="cell">Corrigir</b><span role="cell">Precisão + cuidado</span><p role="cell">“Este campo precisa de uma data futura.”</p></div>
           </div>
+          <div className="word-bank">
+            <div><p className="field-label">Vocabulário preferido</p><p>começar · comparar · entender · escolher · avançar · revisar</p></div>
+            <div><p className="field-label">Evitar por padrão</p><p>disruptivo · revolucionário · líder · imperdível · solução 360º</p></div>
+          </div>
         </section>
 
-        <section className="chapter" id="visual" aria-labelledby="visual-title">
+        <section className="chapter tab-panel" id="panel-visual" role="tabpanel" aria-labelledby="tab-visual" hidden={activeTab !== "visual"}>
           <div className="section-head">
             <div>
               <p className="eyebrow">Forma</p>
@@ -246,7 +326,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter image-system" id="imagem" aria-labelledby="imagem-title">
+        <section className="chapter image-system tab-panel" id="panel-imagem" role="tabpanel" aria-labelledby="tab-imagem" hidden={activeTab !== "imagem"}>
           <div className="section-head">
             <div>
               <p className="eyebrow">Direção</p>
@@ -277,7 +357,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter motion" id="motion" aria-labelledby="motion-title">
+        <section className="chapter motion tab-panel" id="panel-motion" role="tabpanel" aria-labelledby="tab-motion" hidden={activeTab !== "motion"}>
           <div className="section-head light">
             <div>
               <p className="eyebrow">Tempo & atmosfera</p>
@@ -305,7 +385,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter" id="dados" aria-labelledby="dados-title">
+        <section className="chapter tab-panel" id="panel-dados" role="tabpanel" aria-labelledby="tab-dados" hidden={activeTab !== "dados"}>
           <div className="section-head">
             <div>
               <p className="eyebrow">Evidência</p>
@@ -333,7 +413,7 @@ export default function Home() {
           </ul>
         </section>
 
-        <section className="chapter accessibility" id="acessibilidade" aria-labelledby="access-title">
+        <section className="chapter accessibility tab-panel" id="panel-acessibilidade" role="tabpanel" aria-labelledby="tab-acessibilidade" hidden={activeTab !== "acessibilidade"}>
           <div className="section-head light">
             <div>
               <p className="eyebrow">Responsabilidade</p>
@@ -363,31 +443,146 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="chapter implementation" id="implementacao" aria-labelledby="implementation-title">
+        <section className="chapter channels tab-panel" id="panel-canais" role="tabpanel" aria-labelledby="tab-canais" hidden={activeTab !== "canais"}>
           <div className="section-head">
             <div>
-              <p className="eyebrow">Arquitetura</p>
-              <h2 id="implementation-title">Do DNA aos canais</h2>
+              <p className="eyebrow">Adaptação</p>
+              <h2 id="channels-title">Perfis por canal</h2>
             </div>
-            <p>O DNA orienta. Tokens traduzem. Cada canal implementa sem copiar cegamente.</p>
+            <p>O canal muda a intensidade e o formato. A ideia central, a voz e os limites permanecem.</p>
+          </div>
+          <div className="channel-constant">
+            <p className="field-label">Regra de adaptação</p>
+            <p><b>Preservar:</b> promessa, princípios, vocabulário essencial, contraste e critérios éticos.</p>
+            <p><b>Adaptar:</b> densidade, ritmo, proporção, chamada para ação e grau de expressividade.</p>
+          </div>
+          <div className="channel-grid">
+            <article className="channel-card channel-deck">
+              <span>APRESENTAÇÕES</span><h3>Uma ideia por quadro.</h3>
+              <ul><li>Começar pela decisão</li><li>30–60 palavras por slide</li><li>Dados com conclusão explícita</li><li>Imagem como evidência</li></ul>
+            </article>
+            <article className="channel-card channel-proposal">
+              <span>PROPOSTAS</span><h3>Clareza antes da persuasão.</h3>
+              <ul><li>Contexto → abordagem → prova</li><li>Escopo sem ambiguidades</li><li>Tom seguro, não grandioso</li><li>Próximo passo inequívoco</li></ul>
+            </article>
+            <article className="channel-card channel-social">
+              <span>SOCIAL</span><h3>Uma tensão, um gesto.</h3>
+              <ul><li>Gancho específico</li><li>Ritmo mais expressivo</li><li>Texto curto na arte</li><li>Legenda aprofunda</li></ul>
+            </article>
+            <article className="channel-card channel-web">
+              <span>WEB</span><h3>Orientar, provar, convidar.</h3>
+              <ul><li>Hierarquia responsiva</li><li>CTAs com verbos concretos</li><li>Motion explica mudança</li><li>Acessibilidade por padrão</li></ul>
+            </article>
+            <article className="channel-card channel-bi">
+              <span>BI & DADOS</span><h3>A leitura termina em decisão.</h3>
+              <ul><li>KPI com período e unidade</li><li>Cor semântica e redundante</li><li>Precisão proporcional</li><li>Anotar desvios relevantes</li></ul>
+            </article>
+          </div>
+          <div className="channel-prompt">
+            <span>PROMPT DE CANAL</span>
+            <p>“Aplique o perfil <b>[canal]</b>. Preserve os invariantes da marca e adapte apenas as propriedades declaradas como flexíveis.”</p>
+          </div>
+        </section>
+
+        <section className="chapter implementation tab-panel" id="panel-implementacao" role="tabpanel" aria-labelledby="tab-implementacao" hidden={activeTab !== "implementacao"}>
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Camada operacional</p>
+              <h2 id="implementation-title">Contrato para IA</h2>
+            </div>
+            <p>A página explica a marca para pessoas. Os arquivos estruturados entregam as mesmas decisões aos agentes.</p>
           </div>
           <div className="system-flow" aria-label="Relação entre Brand DNA, design tokens e implementação por canal">
             <article className="flow-dna"><span>01 / Significado</span><h3>Brand DNA</h3><p>Essência, princípios, voz, imagem e comportamento.</p></article>
             <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-tokens"><span>02 / Tradução</span><h3>Design tokens</h3><p>Cor, tipo, espaço, raio, sombra, tempo e curvas.</p></article>
+            <article className="flow-tokens"><span>02 / Contrato</span><h3>Regras + tokens</h3><p>Invariantes, preferências, limites, exemplos e valores.</p></article>
             <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-channels"><span>03 / Expressão</span><h3>Canais</h3><ul><li>Produto digital</li><li>Conteúdo & social</li><li>Ambientes</li><li>Movimento & áudio</li></ul></article>
+            <article className="flow-channels"><span>03 / Execução</span><h3>Agente + canal</h3><ul><li>Seleciona o perfil</li><li>Produz o material</li><li>Valida as regras</li><li>Registra exceções</li></ul></article>
+          </div>
+          <div className="machine-grid">
+            <div className="file-tree">
+              <p className="field-label">Pacote canônico</p>
+              <pre>{`brand/
+├── brand-dna.yaml
+├── tokens.json
+├── channel-profiles.yaml
+├── assets-manifest.json
+└── validation-checklist.yaml`}</pre>
+            </div>
+            <div className="contract-anatomy">
+              <p className="field-label">Anatomia de cada regra</p>
+              <dl>
+                <div><dt>intent</dt><dd>Por que a regra existe</dd></div>
+                <div><dt>invariants</dt><dd>O que nunca muda</dd></div>
+                <div><dt>preferences</dt><dd>O padrão recomendado</dd></div>
+                <div><dt>avoid</dt><dd>O que não produzir</dd></div>
+                <div><dt>examples</dt><dd>Pares aprovados e negativos</dd></div>
+                <div><dt>overrides</dt><dd>Exceções por canal</dd></div>
+              </dl>
+            </div>
+          </div>
+          <div className="download-group">
+            <div>
+              <p className="field-label">Arquivos de exemplo</p>
+              <h3>Prontos para conectar a um agente.</h3>
+            </div>
+            <div className="download-list">
+              <a href="/brand/brand-dna.yaml" download><span>DNA estruturado</span><code>.yaml ↓</code></a>
+              <a href="/brand/tokens.json" download><span>Design tokens</span><code>.json ↓</code></a>
+              <a href="/brand/channel-profiles.yaml" download><span>Perfis por canal</span><code>.yaml ↓</code></a>
+              <a href="/brand/assets-manifest.json" download><span>Catálogo de ativos</span><code>.json ↓</code></a>
+              <a href="/brand/validation-checklist.yaml" download><span>Checklist de validação</span><code>.yaml ↓</code></a>
+            </div>
           </div>
           <div className="scope-note">
-            <span>FORA DESTE DOCUMENTO</span>
-            <p>Componentes de interface, padrões de produto e regras específicas de plataforma vivem nos sistemas de implementação de cada canal.</p>
+            <span>REGRA DE CONFLITO</span>
+            <p>Verdade e acessibilidade vencem expressão. Invariantes vencem preferências. O perfil do canal só pode alterar o que estiver marcado como flexível.</p>
+          </div>
+        </section>
+
+        <section className="chapter governance tab-panel" id="panel-governanca" role="tabpanel" aria-labelledby="tab-governanca" hidden={activeTab !== "governanca"}>
+          <div className="section-head light">
+            <div>
+              <p className="eyebrow">Manutenção</p>
+              <h2 id="governance-title">Governança</h2>
+            </div>
+            <p>Uma fonte de verdade só permanece confiável quando decisões, responsáveis e mudanças ficam visíveis.</p>
+          </div>
+          <div className="version-card">
+            <div><span>VERSÃO ATUAL</span><strong>1.1</strong></div>
+            <dl>
+              <div><dt>Status</dt><dd>Aprovado para uso</dd></div>
+              <div><dt>Responsável</dt><dd>[Time ou pessoa proprietária]</dd></div>
+              <div><dt>Revisão</dt><dd>[AAAA-MM-DD]</dd></div>
+              <div><dt>Próxima revisão</dt><dd>[AAAA-MM-DD]</dd></div>
+            </dl>
+          </div>
+          <div className="governance-grid">
+            <article><span>APROVADO</span><h3>Regra canônica</h3><p>Pode orientar pessoas e agentes em materiais finais.</p></article>
+            <article><span>EXPERIMENTAL</span><h3>Hipótese em teste</h3><p>Usar em escopo controlado e registrar resultados.</p></article>
+            <article><span>OBSOLETO</span><h3>Não utilizar</h3><p>Permanece no histórico, nunca no contexto ativo do agente.</p></article>
+          </div>
+          <div className="approval-flow">
+            <p className="field-label">Fluxo de exceção</p>
+            <ol><li><b>01</b><span>Identificar conflito</span></li><li><b>02</b><span>Registrar contexto</span></li><li><b>03</b><span>Aprovar responsável</span></li><li><b>04</b><span>Atualizar a fonte</span></li></ol>
+          </div>
+          <div className="checklist-preview">
+            <p className="field-label">Antes de publicar</p>
+            <ul>
+              <li><span>✓</span> A promessa está correta e comprovável?</li>
+              <li><span>✓</span> O perfil do canal foi aplicado?</li>
+              <li><span>✓</span> Voz, imagem e dados respeitam os invariantes?</li>
+              <li><span>✓</span> Contraste, leitura e movimento estão acessíveis?</li>
+              <li><span>✓</span> Ativos usados constam como aprovados?</li>
+              <li><span>✓</span> Exceções foram registradas?</li>
+            </ul>
           </div>
         </section>
 
         <footer>
           <div className="footer-mark"><span>DNA</span><i /></div>
           <p>Template fictício para futuras fontes de verdade de marca.</p>
-          <a href="#inicio">Voltar ao topo <span aria-hidden="true">↑</span></a>
+          <button type="button" onClick={() => selectTab("inicio")}>Visão geral <span aria-hidden="true">→</span></button>
         </footer>
       </div>
     </main>

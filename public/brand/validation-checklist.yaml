@@ -1,0 +1,36 @@
+schema_version: "1.0"
+result_values: [pass, fail, not_applicable, needs_review]
+checks:
+  - id: strategy.promise
+    question: "A promessa utilizada está correta e é comprovável?"
+    severity: blocking
+  - id: strategy.audience
+    question: "O público e sua necessidade estão identificados?"
+    severity: required
+  - id: channel.profile
+    question: "O perfil correto de canal foi aplicado?"
+    severity: required
+  - id: voice.invariants
+    question: "O texto respeita os invariantes de voz?"
+    severity: required
+  - id: voice.jargon
+    question: "Jargões e superlativos sem evidência foram removidos?"
+    severity: required
+  - id: visual.assets
+    question: "Todos os ativos constam como aprovados no manifesto?"
+    severity: blocking
+  - id: visual.tokens
+    question: "Cores, tipografia e espaçamento usam tokens canônicos?"
+    severity: required
+  - id: data.context
+    question: "Métricas declaram valor, unidade, período e fonte?"
+    severity: required
+  - id: accessibility.contrast
+    question: "Contraste, legibilidade, foco e movimento estão acessíveis?"
+    severity: blocking
+  - id: boundaries.ethics
+    question: "A peça evita urgência artificial, omissão e falsas certezas?"
+    severity: blocking
+  - id: governance.exception
+    question: "Exceções foram registradas e aprovadas?"
+    severity: required_if_applicable
