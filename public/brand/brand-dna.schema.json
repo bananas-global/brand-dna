@@ -3,6 +3,27 @@
   "$id": "brand-dna.schema.json",
   "title": "Minimum Viable Brand DNA",
   "type": "object",
+  "$defs": {
+    "colorScaleLink": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["linked", "custom"] },
+        "settings": { "$ref": "#/properties/visual/properties/colorScale" }
+      }
+    },
+    "fontRole": {
+      "type": "object",
+      "required": ["family", "source", "weight"],
+      "additionalProperties": false,
+      "properties": {
+        "family": { "type": "string", "minLength": 1 },
+        "source": { "type": "string" },
+        "weight": { "type": "integer", "minimum": 100, "maximum": 900, "multipleOf": 100 }
+      }
+    }
+  },
   "required": [
     "meta",
     "essence",
@@ -11,6 +32,7 @@
     "voice",
     "visual",
     "imagery",
+    "iconography",
     "motionAndSound",
     "informationAndData",
     "accessibility",
@@ -32,12 +54,106 @@
     },
     "expressionPrinciples": { "type": "array", "minItems": 3, "maxItems": 3 },
     "voice": { "type": "object" },
-    "visual": { "type": "object" },
+    "visual": {
+      "type": "object",
+      "required": ["signatureRule", "colors", "semanticColors", "colorScale", "colorScales", "typography", "spacing", "radii", "shadows"],
+      "properties": {
+        "colors": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["name", "value", "mode", "role"],
+            "properties": {
+              "name": { "type": "string" },
+              "value": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "mode": { "enum": ["source", "complementary", "derived", "custom"] },
+              "role": { "type": "string" }
+            }
+          }
+        },
+        "semanticColors": {
+          "type": "object",
+          "required": ["paper", "ink", "border"],
+          "properties": {
+            "paper": {
+              "type": "object",
+              "required": ["source", "stop", "role"],
+              "properties": {
+                "source": { "const": "Signal" },
+                "stop": { "type": "integer", "minimum": 0, "maximum": 450, "multipleOf": 50 },
+                "role": { "type": "string" }
+              }
+            },
+            "ink": {
+              "type": "object",
+              "required": ["source", "stop", "role"],
+              "properties": {
+                "source": { "const": "Signal" },
+                "stop": { "type": "integer", "minimum": 550, "maximum": 1000, "multipleOf": 50 },
+                "role": { "type": "string" }
+              }
+            },
+            "border": {
+              "type": "object",
+              "required": ["source", "mode", "opacity", "value", "role"],
+              "properties": {
+                "source": { "const": "Ink" },
+                "mode": { "const": "ink-alpha" },
+                "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+                "value": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                "role": { "type": "string" }
+              }
+            }
+          }
+        },
+        "colorScale": {
+          "type": "object",
+          "required": ["lightSteps", "darkSteps", "hueMultiplier", "hueFlip", "saturationMultiplier", "saturationFlip", "contrastColorMode", "contrast"],
+          "properties": {
+            "lightSteps": { "const": 10 },
+            "darkSteps": { "const": 10 },
+            "hueMultiplier": { "type": "number", "minimum": 1, "maximum": 2 },
+            "hueFlip": { "type": "boolean" },
+            "saturationMultiplier": { "type": "number", "minimum": 1, "maximum": 2 },
+            "saturationFlip": { "type": "boolean" },
+            "contrastColorMode": { "const": "highest-contrast-endpoint" },
+            "contrast": { "type": "number", "minimum": 0.5, "maximum": 1.25 }
+          }
+        },
+        "colorScales": {
+          "type": "object",
+          "required": ["Accent", "Success", "Warning", "Error"],
+          "additionalProperties": false,
+          "properties": {
+            "Accent": { "$ref": "#/$defs/colorScaleLink" },
+            "Success": { "$ref": "#/$defs/colorScaleLink" },
+            "Warning": { "$ref": "#/$defs/colorScaleLink" },
+            "Error": { "$ref": "#/$defs/colorScaleLink" }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "required": ["display", "body", "utility"],
+          "additionalProperties": false,
+          "properties": {
+            "display": { "$ref": "#/$defs/fontRole" },
+            "body": { "$ref": "#/$defs/fontRole" },
+            "utility": { "$ref": "#/$defs/fontRole" }
+          }
+        }
+      }
+    },
     "imagery": { "type": "object" },
+    "iconography": {
+      "type": "object",
+      "required": ["principle", "grid", "stroke", "corners", "style"]
+    },
     "motionAndSound": { "type": "object" },
     "informationAndData": { "type": "object" },
     "accessibility": { "type": "object" },
-    "channels": { "type": "array", "minItems": 1 },
+    "channels": { "type": "array", "minItems": 4, "maxItems": 4 },
     "provenance": {
       "type": "object",
       "required": ["evidence", "decisions", "proposals", "missing"],

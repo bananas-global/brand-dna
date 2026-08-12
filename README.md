@@ -7,7 +7,7 @@ Live site: [bananas-global.github.io/brand-dna](https://bananas-global.github.io
 The project deliberately keeps the workflow small:
 
 ```text
-references + 8 questions → brand-dna.json → website
+references + up to 2 visual directions → brand-dna.json → website
 ```
 
 Start with [START-HERE.md](START-HERE.md).
@@ -18,12 +18,15 @@ Start with [START-HERE.md](START-HERE.md).
 - One folder for optional source material: `references/`
 - One canonical brand file: `public/brand/brand-dna.json`
 - One navigable, responsive website that reads the canonical file directly
+- A backend-free Edit mode with live controls, original/draft comparison, local browser persistence, and structured prompt export
 - One static Vite + React build with no application server or database
-- Brand essence, expression, voice, visual identity, imagery, motion, data, accessibility, and channel behavior
-- Basic color, typography, spacing, radius, shadow, and motion tokens
+- A design-first guide organized by principles, logo, typography, color, layout, imagery, iconography, motion, voice, and applications
+- Signal-centered color tokens with derived Paper/Ink stops, an editable Ink-opacity Border, complementary Accent, dynamically harmonized Success/Warning/Error states (`k = 0.12`) with custom overrides, and deterministic 10-light/10-dark scales, typography, spacing, radius, shadow, and motion tokens
 - Explicit provenance: evidence, decisions, proposals, and missing items
 
 UI component libraries, approval workflows, ownership models, and review schedules are intentionally outside the scope.
+
+The editor never writes the repository itself. It keeps a temporary draft in the browser and turns the designer's exact changes into a prompt or change-request file that Codex can apply to the canonical JSON.
 
 ## Run locally
 

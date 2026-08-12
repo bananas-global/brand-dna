@@ -52,16 +52,37 @@
   "visual": {
     "signatureRule": "The name is variable. Proportion is the rule.",
     "colors": [
-      { "name": "Ink", "value": "#182126", "role": "Primary text and dark surfaces" },
-      { "name": "Paper", "value": "#F3F4EF", "role": "Primary background" },
-      { "name": "Signal", "value": "#FF5C35", "role": "Emphasis and action" },
-      { "name": "Field", "value": "#A7E3D5", "role": "Context and support" },
-      { "name": "Pulse", "value": "#6657FF", "role": "Expressive highlight" }
+      { "name": "Signal", "value": "#FF5C35", "mode": "source", "role": "Emphasis and action" },
+      { "name": "Accent", "value": "#6657FF", "mode": "complementary", "role": "Expressive highlight and secondary emphasis" },
+      { "name": "Success", "value": "#2E9B58", "mode": "derived", "role": "Positive states, confirmation, and completed actions" },
+      { "name": "Warning", "value": "#D99A16", "mode": "derived", "role": "Caution, attention, and pending conditions" },
+      { "name": "Error", "value": "#D94332", "mode": "derived", "role": "Errors, destructive actions, and critical states" }
     ],
+    "semanticColors": {
+      "paper": { "source": "Signal", "stop": 50, "role": "Background: primary canvas and light surfaces" },
+      "ink": { "source": "Signal", "stop": 900, "role": "Foreground: primary text, marks, and dark surfaces" },
+      "border": { "source": "Ink", "mode": "ink-alpha", "opacity": 0.2, "value": "#182126", "role": "Borders, dividers, and structural lines" }
+    },
+    "colorScale": {
+      "lightSteps": 10,
+      "darkSteps": 10,
+      "hueMultiplier": 1.1,
+      "hueFlip": false,
+      "saturationMultiplier": 1.1,
+      "saturationFlip": false,
+      "contrastColorMode": "highest-contrast-endpoint",
+      "contrast": 1
+    },
+    "colorScales": {
+      "Accent": { "mode": "linked" },
+      "Success": { "mode": "linked" },
+      "Warning": { "mode": "linked" },
+      "Error": { "mode": "linked" }
+    },
     "typography": {
-      "display": { "family": "Georgia", "weight": 400, "letterSpacing": "-0.04em" },
-      "body": { "family": "Geist Sans", "weight": 400, "lineHeight": 1.55 },
-      "utility": { "family": "Geist Mono", "weight": 500 }
+      "display": { "family": "Georgia", "source": "", "weight": 400 },
+      "body": { "family": "Geist Sans", "source": "", "weight": 400 },
+      "utility": { "family": "Geist Mono", "source": "", "weight": 500 }
     },
     "spacing": { "1": "4px", "2": "8px", "4": "16px", "8": "32px", "16": "64px" },
     "radii": { "small": "4px", "medium": "12px", "full": "999px" },
@@ -79,6 +100,13 @@
     ],
     "do": "Show action, imperfection, and enough context to understand the scene.",
     "avoid": "Obvious stock imagery, staged gestures, and filters that flatten skin tones."
+  },
+  "iconography": {
+    "principle": "A shared drawing logic makes every symbol feel related.",
+    "grid": "24 × 24",
+    "stroke": "1.5 px",
+    "corners": "2 px",
+    "style": "Outline"
   },
   "motionAndSound": {
     "principle": "Enter with direction. Remain at rest.",
@@ -114,15 +142,14 @@
     ]
   },
   "channels": [
+    { "name": "Web pages", "job": "Guide, prove, and invite action across responsive screens.", "rule": "Responsive hierarchy by default." },
     { "name": "Presentations", "job": "Guide a decision through a narrative sequence.", "rule": "One idea per frame." },
-    { "name": "Proposals", "job": "Turn understanding into a clear agreement.", "rule": "Clarity before persuasion." },
-    { "name": "Social", "job": "Create relevant attention and open a conversation.", "rule": "One tension, one gesture." },
-    { "name": "Web", "job": "Guide, prove, and invite action.", "rule": "Responsive hierarchy by default." },
-    { "name": "BI & data", "job": "Reduce the time between reading and decision.", "rule": "Every metric needs context." }
+    { "name": "BI dashboards", "job": "Reduce the time between reading and decision.", "rule": "Every metric needs context." },
+    { "name": "Social media cards/posts", "job": "Create relevant attention in a compact format.", "rule": "One tension, one gesture." }
   ],
   "provenance": {
     "evidence": [],
-    "decisions": [],
+    "decisions": ["channels", "visual.colors", "visual.semanticColors", "visual.colorScale"],
     "proposals": [
       "expressionPrinciples",
       "voice",
@@ -130,8 +157,7 @@
       "imagery",
       "motionAndSound",
       "informationAndData",
-      "accessibility",
-      "channels"
+      "accessibility"
     ],
     "missing": [
       "meta.brandName",

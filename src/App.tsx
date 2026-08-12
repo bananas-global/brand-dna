@@ -1,38 +1,552 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import {
+  buildChangeRequest,
+  buildUpdatePrompt,
+  diffBrandDna,
+  draftStorageKey,
+  reconcileColorBases,
+  setAtPath,
+  type EditorDirections,
+  type JsonValue,
+} from "./editor";
+import { generateColorScale, getColorAtStop, getContrastColor, getScaleTones, resolveBaseColorValue } from "./color-scale";
+import { buildGoogleFontStylesheet, detectGoogleFontWeights, parseGoogleFontLink } from "./google-fonts";
 
-const brandDna = __BRAND_DNA__;
 const brandDnaDownloadUrl = "/brand-dna/brand/brand-dna.json";
+type ColorMode = "source" | "complementary" | "derived" | "custom";
+type BrandColor = { name: string; value: string; mode: ColorMode; role: string };
+type EmbeddedBrandDna = typeof __BRAND_DNA__;
+type ColorScaleSettings = EmbeddedBrandDna["visual"]["colorScale"];
+type ColorScaleLink = { mode: "linked" | "custom"; settings?: ColorScaleSettings };
+type BrandDna = Omit<EmbeddedBrandDna, "visual"> & {
+  visual: Omit<EmbeddedBrandDna["visual"], "colors" | "colorScales"> & {
+    colors: BrandColor[];
+    colorScales: Record<string, ColorScaleLink>;
+  };
+};
+const linkedColorScales = Object.fromEntries(
+  ["Accent", "Success", "Warning", "Error"].map((name) => [name, { mode: "linked" }]),
+) as Record<string, ColorScaleLink>;
+const embeddedBrandDna = __BRAND_DNA__ as BrandDna;
+const initialBrandDna: BrandDna = {
+  ...embeddedBrandDna,
+  visual: {
+    ...embeddedBrandDna.visual,
+    colorScales: embeddedBrandDna.visual.colorScales ?? linkedColorScales,
+  },
+};
 
 const sections = [
-  ["overview", "Overview"],
-  ["strategy", "Strategy"],
-  ["expression", "Expression"],
-  ["voice", "Voice & tone"],
-  ["visual", "Visual identity"],
-  ["imagery", "Imagery system"],
-  ["motion", "Motion & sound"],
-  ["data", "Information & data"],
-  ["accessibility", "Accessibility"],
-  ["channels", "Channel profiles"],
-  ["ai-contract", "AI contract"],
-  ["build-yours", "Build yours"],
+  ["principles", "Principles"],
+  ["logo", "Logo"],
+  ["typography", "Typography"],
+  ["color", "Color"],
+  ["layout", "Layout"],
+  ["imagery", "Imagery"],
+  ["iconography", "Iconography"],
+  ["motion", "Motion"],
+  ["voice", "Voice & Tone"],
+  ["applications", "Applications"],
 ] as const;
 
 type SectionId = (typeof sections)[number][0];
 
-const Swatch = ({ name, hex, role }: { name: string; hex: string; role: string }) => (
-  <div className="swatch">
+const getEffectiveColorScale = (brandDna: BrandDna, colorName: string): ColorScaleSettings => {
+  const linkedScale = brandDna.visual.colorScales?.[colorName];
+  return linkedScale?.mode === "custom" && linkedScale.settings
+    ? { ...brandDna.visual.colorScale, ...linkedScale.settings }
+    : brandDna.visual.colorScale;
+};
+
+const Swatch = ({ name, hex, role, displayValue = hex }: { name: string; hex: string; role: string; displayValue?: string }) => (
+  <article className="swatch">
     <div className="swatch-color" style={{ backgroundColor: hex }} aria-hidden="true" />
-    <div className="swatch-meta">
-      <span>{name}</span>
-      <code>{hex}</code>
-    </div>
-    <p className="swatch-role">{role}</p>
-  </div>
+    <div className="swatch-meta"><b>{name}</b><code>{displayValue}</code></div>
+    <p>{role}</p>
+  </article>
 );
 
+const ColorScale = ({ name, hex, settings, markers }: {
+  name: string;
+  hex: string;
+  settings: BrandDna["visual"]["colorScale"];
+  markers?: Array<{ stop: number; label: string }>;
+}) => {
+  const scale = generateColorScale(hex, settings);
+  const tones = getScaleTones(hex, settings);
+  const contrast = getContrastColor(hex, settings);
+  const oppositeStop = contrast.stop === 0 ? 1000 : 0;
+  const oppositeColor = getColorAtStop(hex, settings, oppositeStop);
+  return <article className="color-scale-row">
+    <header><b>{name}</b><code>{scale.base}</code></header>
+    <div className="color-scale-tones" aria-label={`${name}: 10 light tones, base color at 500, and 10 dark tones`}>
+      {tones.map((tone, index) => {
+        const stop = index * 50;
+        const marker = markers?.find((item) => item.stop === stop);
+        const isContrast = stop === contrast.stop;
+        const isBase = stop === 500;
+        return <i className={`${marker ? "is-semantic" : ""} ${isContrast ? `is-contrast contrast-${stop}` : ""} ${isBase ? "is-base" : ""}`.trim()} key={`${tone}-${index}`} style={{ backgroundColor: tone }} title={`${stop} · ${tone}`}>
+          {marker && <span>{marker.label}</span>}
+          {isContrast && <button
+            className="contrast-marker"
+            type="button"
+            aria-label={`Automatic contrast for ${name}. Stop ${contrast.stop} provides ${contrast.ratio.toFixed(2)} to 1 contrast against the base color. The dot uses stop ${oppositeStop}, the opposite end of the scale.`}
+            data-tooltip={`Calculated automatically · ${contrast.ratio.toFixed(2)}:1 against the base · Dot: ${oppositeStop}`}
+            style={{ "--opposite-color": oppositeColor } as CSSProperties}
+          />}
+        </i>;
+      })}
+    </div>
+    <div className="color-scale-axis" aria-hidden="true"><span>0 / Light</span><span>500 / Base</span><span>1000 / Dark</span></div>
+  </article>;
+};
+
+const Chapter = ({ id, eyebrow, title, note, className = "", children }: {
+  id: SectionId;
+  eyebrow: string;
+  title: string;
+  note: string;
+  className?: string;
+  children: ReactNode;
+}) => (
+  <section
+    className={`chapter tab-panel ${className}`}
+    id={`panel-${id}`}
+    role="tabpanel"
+    aria-labelledby={`tab-${id}`}
+  >
+    <div className="section-head">
+      <div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>
+      <p>{note}</p>
+    </div>
+    {children}
+  </section>
+);
+
+const LineIcon = ({ name, children }: { name: string; children: ReactNode }) => (
+  <figure className="icon-card">
+    <svg viewBox="0 0 48 48" role="img" aria-label={name}>{children}</svg>
+    <figcaption>{name}</figcaption>
+  </figure>
+);
+
+type EditorPanelProps = {
+  section: SectionId;
+  draft: BrandDna;
+  directions: EditorDirections;
+  changeCount: number;
+  comparing: boolean;
+  status: string;
+  onChange: (path: string, value: JsonValue) => void;
+  onDirections: (directions: EditorDirections) => void;
+  onCompare: () => void;
+  onCopy: () => void;
+  onDownload: () => void;
+  onReset: () => void;
+  onClose: () => void;
+};
+
+const Field = ({ label, value, onChange, multiline = false, placeholder }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+  placeholder?: string;
+}) => (
+  <label className="editor-field">
+    <span>{label}</span>
+    {multiline
+      ? <textarea value={value} rows={3} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+      : <input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />}
+  </label>
+);
+
+const RangeField = ({ label, ariaLabel = label, value, min, max, step = 1, unit, onChange }: {
+  label: string;
+  ariaLabel?: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit: string;
+  onChange: (value: number) => void;
+}) => (
+  <label className="editor-field editor-range">
+    <span>{label}<output>{value}{unit}</output></span>
+    <input aria-label={ariaLabel} type="range" min={min} max={max} step={step} value={value} onInput={(event) => onChange(Number(event.currentTarget.value))} />
+  </label>
+);
+
+type TypographyRole = "display" | "body" | "utility";
+
+const FontRoleEditor = ({ fontRole, font, onChange }: {
+  fontRole: TypographyRole;
+  font: BrandDna["visual"]["typography"][TypographyRole];
+  onChange: (path: string, value: JsonValue) => void;
+}) => {
+  const [weightResult, setWeightResult] = useState({ source: font.source ?? "", weights: [font.weight] });
+  const label = fontRole[0].toUpperCase() + fontRole.slice(1);
+  const parsedFont = parseGoogleFontLink(font.source);
+  const weights = weightResult.source === font.source ? weightResult.weights : [font.weight];
+  const checking = Boolean(parsedFont.family) && weightResult.source !== font.source;
+
+  useEffect(() => {
+    if (!parsedFont.family) return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void detectGoogleFontWeights(font.source, { signal: controller.signal }).then((available) => {
+        if (controller.signal.aborted) return;
+        const nextWeights = available.length ? available : [font.weight];
+        setWeightResult({ source: font.source ?? "", weights: nextWeights });
+        if (!nextWeights.includes(font.weight)) {
+          const nearest = nextWeights.reduce((best, candidate) =>
+            Math.abs(candidate - font.weight) < Math.abs(best - font.weight) ? candidate : best,
+          );
+          onChange(`visual.typography.${fontRole}.weight`, nearest);
+        }
+      });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [font.source, font.weight, fontRole, onChange, parsedFont.family]);
+
+  return <div className="editor-font-role">
+    <Field
+      label={`${label} font link`}
+      value={font.source ?? ""}
+      placeholder="Paste a Google Fonts link"
+      onChange={(value) => {
+        const parsed = parseGoogleFontLink(value);
+        onChange(`visual.typography.${fontRole}.source`, value);
+        if (parsed.family) onChange(`visual.typography.${fontRole}.family`, parsed.family);
+      }}
+    />
+    {parsedFont.family && <label className="editor-field editor-font-weight">
+      <span>Preferred weight<output>{checking ? "Checking…" : `${weights.length} available`}</output></span>
+      <select
+        aria-label={`${label} preferred weight`}
+        disabled={checking}
+        value={font.weight}
+        onChange={(event) => onChange(`visual.typography.${fontRole}.weight`, Number(event.target.value))}
+      >
+        {weights.map((weight) => <option value={weight} key={weight}>{weight}</option>)}
+      </select>
+    </label>}
+  </div>;
+};
+
+const SemanticStopSelect = ({ label, sourceName, value, min, max, baseHex, settings, onChange }: {
+  label: string;
+  sourceName: string;
+  value: number;
+  min: number;
+  max: number;
+  baseHex: string;
+  settings: BrandDna["visual"]["colorScale"];
+  onChange: (value: number) => void;
+}) => {
+  const stops = Array.from({ length: (max - min) / 50 + 1 }, (_, index) => min + index * 50);
+  const selectedHex = getColorAtStop(baseHex, settings, value);
+  return <label className="editor-field semantic-select">
+    <span>{label}<output>{selectedHex}</output></span>
+    <select aria-label={`${label} stop`} value={value} onChange={(event) => onChange(Number(event.target.value))}>
+      {stops.map((stop) => <option key={stop} value={stop}>{sourceName} {stop} · {getColorAtStop(baseHex, settings, stop)}</option>)}
+    </select>
+  </label>;
+};
+
+const ScaleControls = ({ name, settings, onChange }: {
+  name: string;
+  settings: ColorScaleSettings;
+  onChange: (setting: keyof ColorScaleSettings, value: JsonValue) => void;
+}) => {
+  const ariaLabel = (label: string) => name === "Signal" ? label : `${name} ${label.toLowerCase()}`;
+  return <div className={`editor-scale-controls ${name === "Signal" ? "is-signal" : "is-custom"}`}>
+    <p>{name} / Scale behavior<span>10 light / 10 dark</span></p>
+    <div className="editor-drift-control">
+      <RangeField label="Hue drift" ariaLabel={ariaLabel("Hue drift")} value={settings.hueMultiplier} min={1} max={2} step={0.01} unit="×" onChange={(value) => onChange("hueMultiplier", value)} />
+      <button type="button" aria-label={ariaLabel("Flip hue drift")} aria-pressed={Boolean(settings.hueFlip)} onClick={() => onChange("hueFlip", !settings.hueFlip)}>Flip</button>
+    </div>
+    <div className="editor-drift-control">
+      <RangeField label="Saturation drift" ariaLabel={ariaLabel("Saturation drift")} value={settings.saturationMultiplier} min={1} max={2} step={0.05} unit="×" onChange={(value) => onChange("saturationMultiplier", value)} />
+      <button type="button" aria-label={ariaLabel("Flip saturation drift")} aria-pressed={Boolean(settings.saturationFlip)} onClick={() => onChange("saturationFlip", !settings.saturationFlip)}>Flip</button>
+    </div>
+    <RangeField label="Scale contrast" ariaLabel={ariaLabel("Scale contrast")} value={settings.contrast} min={0.5} max={1.25} step={0.05} unit="×" onChange={(value) => onChange("contrast", value)} />
+  </div>;
+};
+
+const numberFromToken = (value: string) => Number.parseFloat(value) || 0;
+
+const withOpacity = (hex: string, opacity: number) => {
+  const normalized = hex.replace("#", "");
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+};
+
+function EditorPanel({ section, draft, directions, changeCount, comparing, status, onChange, onDirections, onCompare, onCopy, onDownload, onReset, onClose }: EditorPanelProps) {
+  const sectionLabel = sections.find(([id]) => id === section)?.[1];
+  const signal = draft.visual.colors.find((color) => color.name === "Signal") ?? draft.visual.colors[0];
+  const border = draft.visual.semanticColors.border;
+  const utilityControls = <div className="editor-semantic-colors">
+    <p>Utility colors<span>Derived tokens</span></p>
+    <SemanticStopSelect label="Paper / Background" sourceName="Signal" value={draft.visual.semanticColors.paper.stop} min={0} max={450} baseHex={signal.value} settings={draft.visual.colorScale} onChange={(value) => onChange("visual.semanticColors.paper.stop", value)} />
+    <SemanticStopSelect label="Ink / Foreground" sourceName="Signal" value={draft.visual.semanticColors.ink.stop} min={550} max={1000} baseHex={signal.value} settings={draft.visual.colorScale} onChange={(value) => onChange("visual.semanticColors.ink.stop", value)} />
+    <RangeField label="Border opacity" value={Math.round(border.opacity * 100)} min={0} max={100} step={1} unit="%" onChange={(value) => onChange("visual.semanticColors.border.opacity", value / 100)} />
+  </div>;
+
+  const controls: Record<SectionId, ReactNode> = {
+    principles: <>
+      <Field label="Central idea" value={draft.essence.centralIdea} onChange={(value) => onChange("essence.centralIdea", value)} multiline />
+      {draft.expressionPrinciples.map((principle, index) => <div className="editor-group" key={index}>
+        <Field label={`Principle ${index + 1}`} value={principle.name} onChange={(value) => onChange(`expressionPrinciples[${index}].name`, value)} />
+        <Field label="Intent" value={principle.intent} onChange={(value) => onChange(`expressionPrinciples[${index}].intent`, value)} multiline />
+      </div>)}
+    </>,
+    logo: <Field label="Signature rule" value={draft.visual.signatureRule} onChange={(value) => onChange("visual.signatureRule", value)} multiline />,
+    typography: <>
+      <div className="editor-font-source">
+        <p>Choose each typeface in Google Fonts, copy its link, and paste it into the matching field below.</p>
+        <a href="https://fonts.google.com/" target="_blank" rel="noreferrer">Open Google Fonts ↗</a>
+      </div>
+      <FontRoleEditor fontRole="display" font={draft.visual.typography.display} onChange={onChange} />
+      <FontRoleEditor fontRole="body" font={draft.visual.typography.body} onChange={onChange} />
+      <FontRoleEditor fontRole="utility" font={draft.visual.typography.utility} onChange={onChange} />
+    </>,
+    color: <>
+      <div className="editor-palette-label">Base colors</div>
+      {draft.visual.colors.map((color, index) => {
+        const mode = "mode" in color ? color.mode : undefined;
+        const effectiveScale = getEffectiveColorScale(draft, color.name);
+        const resolvedValue = resolveBaseColorValue(color, signal.value);
+        if (color.name === "Signal") return <Fragment key={color.name}>
+          <div className="editor-base-color">
+            <label className="editor-color">
+              <input aria-label="Choose Signal color" type="color" value={color.value} onChange={(event) => onChange(`visual.colors[${index}].value`, event.target.value.toUpperCase())} />
+              <span>Signal</span>
+              <input aria-label="Signal hex" value={color.value} onChange={(event) => onChange(`visual.colors[${index}].value`, event.target.value)} />
+            </label>
+          </div>
+          <ScaleControls
+            name="Signal"
+            settings={draft.visual.colorScale}
+            onChange={(setting, value) => onChange(`visual.colorScale.${setting}`, value)}
+          />
+          {utilityControls}
+        </Fragment>;
+
+        const derivedMode = color.name === "Accent" ? "complementary" : "derived";
+        const scaleLink = draft.visual.colorScales?.[color.name] ?? { mode: "linked" };
+        const scalePath = `visual.colorScales.${color.name}`;
+        const editorMode = mode === "custom" ? "custom" : scaleLink.mode === "custom" ? "adjusted" : "default";
+        return <Fragment key={color.name}>
+          {color.name === "Success" && <div className="editor-semantic-harmony">
+            <p>Semantic group<span>Success · Warning · Error</span></p>
+          </div>}
+          <section className="editor-derived-color" aria-label={`${color.name} color`}>
+          <div className="editor-derived-summary">
+            <i style={{ backgroundColor: resolvedValue }} aria-hidden="true" />
+            <span><b>{color.name}</b><output>{resolvedValue}</output></span>
+          </div>
+          <div className="editor-mode-toggle editor-derived-tabs" role="group" aria-label={`${color.name} mode`}>
+            <button type="button" aria-pressed={editorMode === "default"} onClick={() => {
+              onChange(`visual.colors[${index}].mode`, derivedMode);
+              onChange(scalePath, { mode: "linked" });
+            }}>Default</button>
+            <button type="button" aria-pressed={editorMode === "adjusted"} onClick={() => {
+              onChange(`visual.colors[${index}].mode`, derivedMode);
+              onChange(scalePath, {
+                mode: "custom",
+                settings: scaleLink.settings ?? structuredClone(draft.visual.colorScale),
+              } as unknown as JsonValue);
+            }}>Adjusted</button>
+            <button type="button" aria-pressed={editorMode === "custom"} onClick={() => {
+              onChange(`visual.colors[${index}].mode`, "custom");
+              onChange(scalePath, {
+                mode: "custom",
+                settings: scaleLink.settings ?? structuredClone(draft.visual.colorScale),
+              } as unknown as JsonValue);
+            }}>Custom</button>
+          </div>
+          {editorMode === "custom" && <label className="editor-custom-color">
+              <input aria-label={`Choose ${color.name} color`} type="color" value={color.value} onChange={(event) => onChange(`visual.colors[${index}].value`, event.target.value.toUpperCase())} />
+              <input aria-label={`${color.name} hex`} value={color.value} onChange={(event) => onChange(`visual.colors[${index}].value`, event.target.value)} />
+            </label>}
+          {(editorMode === "adjusted" || editorMode === "custom") && <ScaleControls
+            name={color.name}
+            settings={effectiveScale}
+            onChange={(setting, value) => onChange(scalePath, {
+              mode: "custom",
+              settings: { ...effectiveScale, [setting]: value },
+            } as unknown as JsonValue)}
+          />}
+          </section>
+        </Fragment>;
+      })}
+    </>,
+    layout: <>
+      {Object.entries(draft.visual.spacing).map(([name, value]) => <RangeField key={name} label={`Space ${name}`} value={numberFromToken(value)} min={0} max={96} step={2} unit="px" onChange={(next) => onChange(`visual.spacing.${name}`, `${next}px`)} />)}
+      {Object.entries(draft.visual.radii).map(([name, value]) => <RangeField key={name} label={`${name} radius`} value={numberFromToken(value)} min={0} max={name === "full" ? 999 : 48} unit="px" onChange={(next) => onChange(`visual.radii.${name}`, `${next}px`)} />)}
+    </>,
+    imagery: <>
+      <Field label="Image principle" value={draft.imagery.principle} onChange={(value) => onChange("imagery.principle", value)} multiline />
+      <Field label="Do" value={draft.imagery.do} onChange={(value) => onChange("imagery.do", value)} multiline />
+      <Field label="Avoid" value={draft.imagery.avoid} onChange={(value) => onChange("imagery.avoid", value)} multiline />
+    </>,
+    iconography: <>
+      <Field label="Grid" value={draft.iconography.grid} onChange={(value) => onChange("iconography.grid", value)} />
+      <Field label="Stroke" value={draft.iconography.stroke} onChange={(value) => onChange("iconography.stroke", value)} />
+      <Field label="Corners" value={draft.iconography.corners} onChange={(value) => onChange("iconography.corners", value)} />
+      <Field label="Style" value={draft.iconography.style} onChange={(value) => onChange("iconography.style", value)} />
+    </>,
+    motion: <>
+      <Field label="Motion principle" value={draft.motionAndSound.principle} onChange={(value) => onChange("motionAndSound.principle", value)} multiline />
+      {Object.entries(draft.motionAndSound.motion).filter(([name]) => name !== "easing").map(([name, value]) => <RangeField key={name} label={name} value={numberFromToken(value)} min={80} max={1200} step={20} unit="ms" onChange={(next) => onChange(`motionAndSound.motion.${name}`, `${next}ms`)} />)}
+      <Field label="Easing" value={draft.motionAndSound.motion.easing} onChange={(value) => onChange("motionAndSound.motion.easing", value)} />
+    </>,
+    voice: <>
+      <Field label="Voice intent" value={draft.voice.intent} onChange={(value) => onChange("voice.intent", value)} multiline />
+      <Field label="Preferred words" value={draft.voice.preferredVocabulary.join(", ")} onChange={(value) => onChange("voice.preferredVocabulary", value.split(",").map((word) => word.trim()).filter(Boolean))} multiline />
+      <Field label="Words to avoid" value={draft.voice.avoidVocabulary.join(", ")} onChange={(value) => onChange("voice.avoidVocabulary", value.split(",").map((word) => word.trim()).filter(Boolean))} multiline />
+    </>,
+    applications: <>{draft.channels.map((channel, index) => <div className="editor-group" key={channel.name}>
+      <p className="editor-locked">{channel.name}<span>Fixed format</span></p>
+      <Field label="Usage rule" value={channel.rule} onChange={(value) => onChange(`channels[${index}].rule`, value)} multiline />
+    </div>)}</>,
+  };
+
+  return <aside className="editor-panel" aria-label="Brand editor">
+    <header className="editor-head">
+      <div><span>Edit / {sectionLabel}</span><b>{changeCount} {changeCount === 1 ? "change" : "changes"}</b></div>
+      <button type="button" aria-label="Close editor" onClick={onClose}>×</button>
+    </header>
+    <div className="editor-scroll">
+      {section === "principles" && <section className="editor-direction" aria-labelledby="direction-heading">
+          <h2 id="direction-heading">Direction</h2>
+          <Field label="Should feel like" value={directions.desired} onChange={(desired) => onDirections({ ...directions, desired })} multiline />
+          <Field label="Should not feel like" value={directions.avoided} onChange={(avoided) => onDirections({ ...directions, avoided })} multiline />
+        </section>}
+      <section className="editor-controls" aria-labelledby="controls-heading">
+        <h2 id="controls-heading">{sectionLabel}</h2>
+        {controls[section]}
+      </section>
+    </div>
+    <div className="editor-actions">
+      <button type="button" aria-label={comparing ? "Show draft" : "Compare original"} onClick={onCompare}>{comparing ? "Draft" : "Compare"}</button>
+      <button type="button" aria-label="Copy update prompt" onClick={onCopy} disabled={changeCount === 0 && !directions.desired && !directions.avoided}>Copy</button>
+      <button type="button" aria-label="Download changes" onClick={onDownload} disabled={changeCount === 0}>Download</button>
+      <button className="editor-reset" type="button" aria-label="Reset draft" onClick={onReset} disabled={changeCount === 0}>Reset</button>
+      <p role="status" aria-live="polite">{status || "Changes stay in this browser until you copy them."}</p>
+    </div>
+  </aside>;
+}
+
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<SectionId>("overview");
+  const [activeTab, setActiveTab] = useState<SectionId>("principles");
+  const [isEditing, setIsEditing] = useState(false);
+  const [comparing, setComparing] = useState(false);
+  const [status, setStatus] = useState("");
+  const [draft, setDraft] = useState<BrandDna>(() => {
+    try {
+      const saved = localStorage.getItem(draftStorageKey);
+      return saved
+        ? reconcileColorBases(JSON.parse(saved).draft as BrandDna, initialBrandDna)
+        : structuredClone(initialBrandDna);
+    } catch {
+      return structuredClone(initialBrandDna);
+    }
+  });
+  const [directions, setDirections] = useState<EditorDirections>(() => {
+    try {
+      const saved = localStorage.getItem(draftStorageKey);
+      return saved ? JSON.parse(saved).directions as EditorDirections : { desired: "", avoided: "" };
+    } catch {
+      return { desired: "", avoided: "" };
+    }
+  });
+  const changes = useMemo(() => diffBrandDna(initialBrandDna, draft), [draft]);
+  const brandDna = isEditing && !comparing ? draft : initialBrandDna;
+  const typography = brandDna.visual.typography;
+  const signal = brandDna.visual.colors.find((item) => item.name === "Signal") ?? brandDna.visual.colors[0];
+  const resolvedBaseColors = brandDna.visual.colors.map((base) => ({
+    ...base,
+    value: resolveBaseColorValue(base, signal.value),
+  }));
+  const ink = getColorAtStop(signal.value, brandDna.visual.colorScale, brandDna.visual.semanticColors.ink.stop);
+  const borderToken = brandDna.visual.semanticColors.border;
+  const border = withOpacity(ink, borderToken.opacity);
+  const contrastColors = resolvedBaseColors.map((base) => ({
+    base,
+    contrast: getContrastColor(base.value, getEffectiveColorScale(brandDna, base.name)),
+  }));
+  const resolvedColors = [
+    {
+      name: "Ink",
+      value: ink,
+      role: `${brandDna.visual.semanticColors.ink.role} · Signal ${brandDna.visual.semanticColors.ink.stop}`,
+    },
+    {
+      name: "Paper",
+      value: getColorAtStop(signal.value, brandDna.visual.colorScale, brandDna.visual.semanticColors.paper.stop),
+      role: `${brandDna.visual.semanticColors.paper.role} · Signal ${brandDna.visual.semanticColors.paper.stop}`,
+    },
+    {
+      name: "Border",
+      value: border,
+      displayValue: `${Math.round(borderToken.opacity * 100)}% Ink`,
+      role: `${borderToken.role} · ${Math.round(borderToken.opacity * 100)}% Ink`,
+    },
+    ...resolvedBaseColors,
+  ];
+  const paletteGroups = [
+    { id: "brand", label: "Brand", names: ["Signal", "Accent"] },
+    { id: "utility", label: "Utility", names: ["Ink", "Paper", "Border"] },
+    { id: "semantic", label: "Semantic", names: ["Success", "Warning", "Error"] },
+  ].map((group) => ({
+    ...group,
+    colors: group.names.map((name) => resolvedColors.find((item) => item.name === name)).filter((item) => item !== undefined),
+  }));
+  const color = (name: string, fallback: string) => resolvedColors.find((item) => item.name.toLowerCase() === name)?.value || fallback;
+  const previewStyle = {
+    "--ink": color("ink", "#182126"),
+    "--paper": color("paper", "#F3F4EF"),
+    "--signal": color("signal", "#FF5C35"),
+    "--accent": color("accent", "#6657FF"),
+    "--success": color("success", "#2E9B58"),
+    "--warning": color("warning", "#D99A16"),
+    "--error": color("error", "#D94332"),
+    "--line": border,
+    "--brand-display": `"${typography.display.family}", Georgia, serif`,
+    "--brand-sans": `"${typography.body.family}", Arial, sans-serif`,
+    "--brand-mono": `"${typography.utility.family}", monospace`,
+    "--brand-display-weight": typography.display.weight,
+    "--brand-body-weight": typography.body.weight,
+    "--brand-utility-weight": typography.utility.weight,
+  } as CSSProperties;
+
+  useEffect(() => {
+    const roles = ["display", "body", "utility"] as const;
+    const links = roles.flatMap((role) => {
+      const stylesheet = buildGoogleFontStylesheet(typography[role].source, typography[role].weight);
+      if (!stylesheet) return [];
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = stylesheet;
+      link.dataset.brandFont = role;
+      document.head.append(link);
+      return [link];
+    });
+    return () => links.forEach((link) => link.remove());
+  }, [typography]);
+
+  useEffect(() => {
+    localStorage.setItem(draftStorageKey, JSON.stringify({ draft, directions }));
+  }, [draft, directions]);
 
   useEffect(() => {
     const syncWithHash = () => {
@@ -47,9 +561,9 @@ export default function Home() {
     };
   }, []);
 
-  const selectTab = (id: SectionId, updateUrl = true) => {
+  const selectTab = (id: SectionId) => {
     setActiveTab(id);
-    if (updateUrl) window.history.replaceState(null, "", `#${id}`);
+    window.history.replaceState(null, "", `#${id}`);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
@@ -68,24 +582,58 @@ export default function Home() {
     document.getElementById(`tab-${id}`)?.focus();
   };
 
+  const updateDraft = useCallback((path: string, value: JsonValue) => {
+    setDraft((current) => setAtPath(current, path, value));
+    setComparing(false);
+    setStatus("");
+  }, []);
+
+  const copyPrompt = async () => {
+    const prompt = buildUpdatePrompt(initialBrandDna, draft, directions);
+    await navigator.clipboard.writeText(prompt);
+    setStatus("Update prompt copied.");
+  };
+
+  const downloadChanges = () => {
+    const request = buildChangeRequest(initialBrandDna, draft, directions);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(request, null, 2)], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "brand-dna-change-request.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setStatus("Change request downloaded.");
+  };
+
+  const resetDraft = () => {
+    setDraft(structuredClone(initialBrandDna));
+    setDirections({ desired: "", avoided: "" });
+    setComparing(false);
+    setStatus("Draft and directions reset to the source JSON.");
+  };
+
   return (
-    <main>
+    <main className={isEditing ? "is-editing" : ""} style={previewStyle}>
       <a className="skip-link" href="#content">Skip to content</a>
 
       <header className="topbar" aria-label="Document header">
-        <button className="wordmark" type="button" onClick={() => selectTab("overview")} aria-label="Open overview">
+        <button className="wordmark" type="button" onClick={() => selectTab("principles")} aria-label="Open principles">
           <span>DNA</span><i aria-hidden="true" />
         </button>
-        <p>Brand system template</p>
+        <p>{comparing ? "Original source" : "Brand guidelines"}</p>
         <div className="document-meta">
-          <span>Base 00</span>
+          <div className="mode-switch" aria-label="Preview mode">
+            <button type="button" aria-pressed={!isEditing} onClick={() => { setIsEditing(false); setComparing(false); }}>View</button>
+            <button type="button" aria-pressed={isEditing} onClick={() => setIsEditing(true)}>Edit</button>
+          </div>
           <span>v{brandDna.meta.version}</span>
+          <a href={brandDnaDownloadUrl} download>Download JSON ↓</a>
         </div>
       </header>
 
       <aside className="rail" aria-label="Page navigation">
-        <p className="rail-label">Chapters</p>
-        <nav aria-label="Brand DNA chapters">
+        <p className="rail-label">Guidelines</p>
+        <nav aria-label="Brand guideline sections">
           <ol role="tablist" aria-orientation="vertical">
             {sections.map(([id, label], index) => (
               <li key={id}>
@@ -99,451 +647,227 @@ export default function Home() {
                   onClick={() => selectTab(id)}
                   onKeyDown={(event) => handleTabKey(event, index)}
                 >
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  {label}
+                  <span>{String(index + 1).padStart(2, "0")}</span>{label}
                 </button>
               </li>
             ))}
           </ol>
         </nav>
-        <p className="rail-note">A source of truth before interfaces.</p>
+        <p className="rail-note">Use the rule.<br />Make the work.</p>
       </aside>
 
       <div className="page" id="content">
-        <section className="hero tab-panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" hidden={activeTab !== "overview"}>
-          <div className="hero-kicker reveal r1">
-            <span>Minimum viable Brand DNA</span>
-            <span>Open-source starter</span>
-          </div>
-          <div className="hero-copy reveal r2">
-            <p className="hero-pretitle">Brand DNA / Brand System</p>
-            <h1 id="hero-title">
-              What makes a brand
-              <em>itself.</em>
-            </h1>
-          </div>
-          <div className="hero-bottom reveal r3">
-            <p className="hero-intro">
-              Add what you have, answer eight questions, and turn one structured file into a brand source
-              of truth for people and AI agents.
-            </p>
-            <div className="spectrum" aria-label="Espectro visual demonstrativo">
-              <span /><span /><span /><span /><span />
-            </div>
-            <button className="hero-start" type="button" onClick={() => selectTab("build-yours")}>Build yours <span aria-hidden="true">→</span></button>
-          </div>
-        </section>
-
-        <section className="chapter essence tab-panel" id="panel-strategy" role="tabpanel" aria-labelledby="tab-strategy" hidden={activeTab !== "strategy"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Foundation</p>
-              <h2 id="strategy-title">Brand essence</h2>
-            </div>
-            <p>The part that does not change when the format does.</p>
-          </div>
-          <div className="essence-grid">
-            <div className="essence-statement">
-              <span className="field-label">Central idea</span>
+        <div hidden={activeTab !== "principles"}>
+          <Chapter id="principles" eyebrow="01 / Foundation" title="Principles" note="The few decisions that guide every expression.">
+            <div className="principle-lead">
+              <p className="field-label">Central idea</p>
               <blockquote>“{brandDna.essence.centralIdea}”</blockquote>
-              <p>This is not a tagline. It is the internal criterion for saying “yes,” “no,” and “not yet.”</p>
             </div>
-            <dl className="definition-list">
-              <div>
-                <dt>Purpose</dt>
-                <dd>{brandDna.essence.purpose}</dd>
-              </div>
-              <div>
-                <dt>Role</dt>
-                <dd>{brandDna.essence.role}</dd>
-              </div>
-              <div>
-                <dt>Tension</dt>
-                <dd>{brandDna.essence.tension}</dd>
-              </div>
-              <div>
-                <dt>Promise</dt>
-                <dd>{brandDna.essence.promise}</dd>
-              </div>
+            <div className="principles-grid">
+              {brandDna.expressionPrinciples.map((principle, index) => (
+                <article key={principle.name}>
+                  <span>P{index + 1}</span><h2>{principle.name}</h2><p>{principle.intent}</p>
+                </article>
+              ))}
+            </div>
+            <dl className="foundation-strip">
+              <div><dt>Purpose</dt><dd>{brandDna.essence.purpose}</dd></div>
+              <div><dt>Promise</dt><dd>{brandDna.essence.promise}</dd></div>
             </dl>
-          </div>
-          <div className="strategy-grid">
-            <article className="strategy-card strategy-position">
-              <p className="field-label">Positioning</p>
-              <h3>{brandDna.positioning.statement}</h3>
-              <p>A comparable, verifiable statement. It is not a slogan or advertising copy.</p>
-            </article>
-            <article className="strategy-card">
-              <p className="field-label">Primary audience</p>
-              <h3>{brandDna.positioning.primaryAudience}</h3>
-              <ul><li>Context and needs</li><li>Barriers and objections</li><li>Decision criteria</li></ul>
-            </article>
-            <article className="strategy-card">
-              <p className="field-label">Influencing audience</p>
-              <h3>{brandDna.positioning.influencingAudience}</h3>
-              <ul><li>What they need to prove</li><li>Risks they need to reduce</li><li>Language they recognize</li></ul>
-            </article>
-          </div>
-          <div className="decision-order">
-            <p className="field-label">Decision order for agents</p>
-            <ol>
-              <li><span>01</span><b>Truth</b><p>Never sacrifice accuracy for impact.</p></li>
-              <li><span>02</span><b>Clarity</b><p>Reduce effort before adding expression.</p></li>
-              <li><span>03</span><b>Distinction</b><p>Apply personality without reducing comprehension.</p></li>
-              <li><span>04</span><b>Channel</b><p>Adapt the format while preserving invariants.</p></li>
-            </ol>
-          </div>
-          <div className="brand-compass" aria-label="Fictional positioning compass">
-            <div className="axis axis-x"><span>Approachable</span><span>Authoritative</span></div>
-            <div className="axis axis-y"><span>Calm</span><span>Expressive</span></div>
-            <div className="compass-field"><span className="compass-point">Intent point</span></div>
-          </div>
-        </section>
+          </Chapter>
+        </div>
 
-        <section className="chapter tab-panel" id="panel-expression" role="tabpanel" aria-labelledby="tab-expression" hidden={activeTab !== "expression"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Behavior</p>
-              <h2 id="expression-title">Expression principles</h2>
+        <div hidden={activeTab !== "logo"}>
+          <Chapter id="logo" eyebrow="02 / Signature" title="Logo" note="Protect the mark. Keep every application recognizable." className="logo-page">
+            <div className="logo-hero">
+              <div className="mark-demo"><span>[BRAND]</span><i /></div>
+              <div><p className="field-label">Primary signature</p><h2>{brandDna.visual.signatureRule}</h2></div>
             </div>
-            <p>Three productive tensions help the brand sound like itself without repeating formulas.</p>
-          </div>
-          <div className="principles-grid">
-            {brandDna.expressionPrinciples.map((principle, index) => (
-              <article key={principle.name}>
-                <span className="principle-index">P—{String.fromCharCode(65 + index)}</span>
-                <h3>{principle.name}</h3>
-                <p>{principle.intent}</p>
-                <div className="range"><i style={{ left: `${[76, 42, 61][index]}%` }} /><span>Restrained</span><span>Expressive</span></div>
+            <div className="logo-system">
+              <article className="clearspace-demo">
+                <p className="field-label">Clear space</p>
+                <div className="clearspace-box"><i /><b>[BRAND]</b><i /></div>
+                <p>Keep one signal width clear on every side.</p>
               </article>
-            ))}
-          </div>
-          <div className="example-pair">
-            <article className="example-approved"><span>WORKS</span><h3>“{brandDna.expressionPrinciples[0].approvedExample}”</h3><p>Direct, human, and clearly prioritized.</p></article>
-            <article className="example-avoid"><span>AVOID</span><h3>“{brandDna.expressionPrinciples[0].avoidExample}”</h3><p>Grandiose without evidence, generic, and noisy.</p></article>
-          </div>
-        </section>
+              <article className="logo-pair logo-light"><span>[BRAND]</span><p>Light background</p></article>
+              <article className="logo-pair logo-dark"><span>[BRAND]</span><p>Dark background</p></article>
+            </div>
+            <ul className="compact-rules"><li>Do not stretch.</li><li>Do not add effects.</li><li>Do not alter proportions.</li></ul>
+          </Chapter>
+        </div>
 
-        <section className="chapter verbal tab-panel" id="panel-voice" role="tabpanel" aria-labelledby="tab-voice" hidden={activeTab !== "voice"}>
-          <div className="section-head light">
-            <div>
-              <p className="eyebrow">Language</p>
-              <h2 id="voice-title">Voice & tone</h2>
+        <div hidden={activeTab !== "typography"}>
+          <Chapter id="typography" eyebrow="03 / Type system" title="Typography" note="Hierarchy first. Personality follows." className="type-page">
+            <div className="type-marquee"><span>Aa</span><p>One system.<br />Three voices.</p></div>
+            <div className="type-specimens">
+              <article className="type-display"><span>Display</span><p>Make the point visible.</p><code>{brandDna.visual.typography.display.family} · {brandDna.visual.typography.display.weight}</code></article>
+              <article className="type-body"><span>Body</span><p>Use body type for sustained reading, instructions, and supporting detail.</p><code>{brandDna.visual.typography.body.family} · {brandDna.visual.typography.body.weight}</code></article>
+              <article className="type-utility"><span>Utility</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>{brandDna.visual.typography.utility.family} · {brandDna.visual.typography.utility.weight}</code></article>
             </div>
-            <p>Voice is stable. Tone adapts to context without losing intent.</p>
-          </div>
-          <div className="voice-grid">
-            <div className="voice-hero">
-              <p className="field-label">Voice in one sentence</p>
-              <blockquote>“{brandDna.voice.intent}”</blockquote>
+            <div className="type-scale" aria-label="Type scale">
+              <div><code>Display / 76</code><b>Brand systems</b></div>
+              <div><code>Heading / 32</code><b>Built to be used</b></div>
+              <div><code>Body / 16</code><span>Clear information at a comfortable reading size.</span></div>
+              <div><code>Label / 10</code><span>SECTION LABEL</span></div>
             </div>
-            <div className="voice-rules">
-              {brandDna.voice.rules.map((rule, index) => (
-                <div key={rule}><span>{String(index + 1).padStart(2, "0")}</span><h3>{rule}</h3><p>Apply this rule before adding personality or flourish.</p></div>
-              ))}
-            </div>
-          </div>
-          <div className="tone-table" role="table" aria-label="Tone scale by context">
-            <div className="tone-row tone-header" role="row">
-              <span role="columnheader">Context</span><span role="columnheader">Priority</span><span role="columnheader">Fictional example</span>
-            </div>
-            <div className="tone-row" role="row"><b role="cell">Guide</b><span role="cell">Clarity + calm</span><p role="cell">“Start here. You can review it later.”</p></div>
-            <div className="tone-row" role="row"><b role="cell">Celebrate</b><span role="cell">Energy + restraint</span><p role="cell">“All set. Your next step is ready.”</p></div>
-            <div className="tone-row" role="row"><b role="cell">Correct</b><span role="cell">Precision + care</span><p role="cell">“This field needs a future date.”</p></div>
-          </div>
-          <div className="word-bank">
-            <div><p className="field-label">Preferred vocabulary</p><p>{brandDna.voice.preferredVocabulary.join(" · ")}</p></div>
-            <div><p className="field-label">Avoid by default</p><p>{brandDna.voice.avoidVocabulary.join(" · ")}</p></div>
-          </div>
-        </section>
+          </Chapter>
+        </div>
 
-        <section className="chapter tab-panel" id="panel-visual" role="tabpanel" aria-labelledby="tab-visual" hidden={activeTab !== "visual"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Form</p>
-              <h2 id="visual-title">Visual identity</h2>
+        <div hidden={activeTab !== "color"}>
+          <Chapter id="color" eyebrow="04 / Palette" title="Color" note="Use color to organize, signal, and create recognition." className="color-page">
+            <div className="palette-groups">
+              {paletteGroups.map((group) => <section className="palette-group" aria-labelledby={`palette-${group.id}`} key={group.id}>
+                <h2 id={`palette-${group.id}`}>{group.label}</h2>
+                <div className={`swatches swatches-${group.id}`}>
+                  {group.colors.map((color) => <Swatch key={color.name} name={color.name} hex={color.value} role={color.role} displayValue={"displayValue" in color ? color.displayValue : undefined} />)}
+                </div>
+              </section>)}
             </div>
-            <p>A minimal grammar: color that guides, typography that prioritizes, and space that creates rhythm.</p>
-          </div>
-
-          <div className="visual-rule">
-            <div className="mark-demo"><span>[BRAND]</span><i /></div>
-            <div>
-              <p className="field-label">Placeholder signature</p>
-              <h3>{brandDna.visual.signatureRule}</h3>
-              <p>Clear space around the signature equals the height of the circular signal. Never compress, skew, or fill it with effects.</p>
-            </div>
-          </div>
-
-          <div className="token-group">
-            <div className="token-title"><p className="eyebrow">Tokens / Color</p><p>Function before preference.</p></div>
-            <div className="swatches">
-              {brandDna.visual.colors.map((color) => <Swatch key={color.name} name={color.name} hex={color.value} role={color.role} />)}
-            </div>
-          </div>
-
-          <div className="type-specimen">
-            <div className="token-title"><p className="eyebrow">Tokens / Typography</p><p>From argument to evidence.</p></div>
-            <div className="type-grid">
-              <div className="type-display"><span>Display / Editorial</span><p>Aa</p><code>{brandDna.visual.typography.display.family} · {brandDna.visual.typography.display.weight} · {brandDna.visual.typography.display.letterSpacing}</code></div>
-              <div className="type-body"><span>Body / Reading</span><p>Clarity begins with the right distance between ideas.</p><code>{brandDna.visual.typography.body.family} · {brandDna.visual.typography.body.weight} · {brandDna.visual.typography.body.lineHeight}</code></div>
-              <div className="type-utility"><span>UTILITY / DATA</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>{brandDna.visual.typography.utility.family} · {brandDna.visual.typography.utility.weight}</code></div>
-            </div>
-          </div>
-
-          <div className="token-matrix">
-            <div className="matrix-block spacing-block">
-              <p className="eyebrow">Spacing</p>
-              {Object.entries(brandDna.visual.spacing).map(([name, value]) => (
-                <div key={name}><i style={{ width: Number.parseInt(value, 10) }} /><code>space-{name} · {value}</code></div>
-              ))}
-            </div>
-            <div className="matrix-block radius-block">
-              <p className="eyebrow">Radii</p>
-              <div><i className="radius-sm" /><code>radius-small · {brandDna.visual.radii.small}</code></div>
-              <div><i className="radius-md" /><code>radius-medium · {brandDna.visual.radii.medium}</code></div>
-              <div><i className="radius-full" /><code>radius-full · {brandDna.visual.radii.full}</code></div>
-            </div>
-            <div className="matrix-block shadow-block">
-              <p className="eyebrow">Shadows</p>
-              <div><i className="shadow-soft" /><code>shadow-soft</code></div>
-              <div><i className="shadow-lift" /><code>shadow-lift</code></div>
-            </div>
-          </div>
-        </section>
-
-        <section className="chapter image-system tab-panel" id="panel-imagery" role="tabpanel" aria-labelledby="tab-imagery" hidden={activeTab !== "imagery"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Direction</p>
-              <h2 id="imagery-title">Imagery system</h2>
-            </div>
-            <p>{brandDna.imagery.principle}</p>
-          </div>
-          <div className="image-gallery">
-            <figure className="image-placeholder image-a">
-              <div className="crop-marks"><span /><span /><span /><span /></div>
-              <div className="orb orb-a" /><div className="orb orb-b" />
-              <figcaption><b>01 / {brandDna.imagery.directions[0].name}</b><span>{brandDna.imagery.directions[0].description}</span></figcaption>
-            </figure>
-            <figure className="image-placeholder image-b">
-              <div className="crop-marks"><span /><span /><span /><span /></div>
-              <div className="light-shape" />
-              <figcaption><b>02 / {brandDna.imagery.directions[1].name}</b><span>{brandDna.imagery.directions[1].description}</span></figcaption>
-            </figure>
-            <figure className="image-placeholder image-c">
-              <div className="crop-marks"><span /><span /><span /><span /></div>
-              <div className="image-type">Aa</div>
-              <figcaption><b>03 / {brandDna.imagery.directions[2].name}</b><span>{brandDna.imagery.directions[2].description}</span></figcaption>
-            </figure>
-          </div>
-          <div className="image-rules">
-            <div><span className="do">DO</span><p>{brandDna.imagery.do}</p></div>
-            <div><span className="dont">AVOID</span><p>{brandDna.imagery.avoid}</p></div>
-          </div>
-        </section>
-
-        <section className="chapter motion tab-panel" id="panel-motion" role="tabpanel" aria-labelledby="tab-motion" hidden={activeTab !== "motion"}>
-          <div className="section-head light">
-            <div>
-              <p className="eyebrow">Time & atmosphere</p>
-              <h2 id="motion-title">Motion & sound</h2>
-            </div>
-            <p>Motion explains change. Sound confirms action—always optional, never intrusive.</p>
-          </div>
-          <div className="motion-stage" aria-label="Intentional, reduced-motion demonstration">
-            <div className="motion-orbit"><i /><span>Continuous transformation</span></div>
-            <div className="motion-copy">
-              <p className="field-label">Motion principle</p>
-              <h3>{brandDna.motionAndSound.principle}</h3>
-              <p>Short transitions clarify cause and effect. Ambient motion is rare and respects reduced-motion preferences.</p>
-            </div>
-          </div>
-          <div className="motion-tokens">
-            <div><span>Fast</span><b>{brandDna.motionAndSound.motion.fast}</b><i className="m-fast" /></div>
-            <div><span>Standard</span><b>{brandDna.motionAndSound.motion.standard}</b><i className="m-base" /></div>
-            <div><span>Expressive</span><b>{brandDna.motionAndSound.motion.expressive}</b><i className="m-slow" /></div>
-            <div><span>Easing</span><b>{brandDna.motionAndSound.motion.easing}</b><i className="m-curve" /></div>
-          </div>
-          <div className="sound-note">
-            <div className="sound-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
-            <div><p className="field-label">Sonic signature / placeholder</p><p>{brandDna.motionAndSound.sound}</p></div>
-          </div>
-        </section>
-
-        <section className="chapter tab-panel" id="panel-data" role="tabpanel" aria-labelledby="tab-data" hidden={activeTab !== "data"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Evidence</p>
-              <h2 id="data-title">Information & data language</h2>
-            </div>
-            <p>{brandDna.informationAndData.principle}</p>
-          </div>
-          <div className="data-grid">
-            <div className="data-story">
-              <p className="field-label">Fictional example / Relative index</p>
-              <div className="big-data"><strong>72</strong><span>/100</span></div>
-              <p>Name the metric, state the period, and explain what changes for the reader.</p>
-            </div>
-            <div className="bar-chart" aria-label="Illustrative chart with fictional values: clarity 72, trust 58, distinction 86">
-              <div><span>Clarity</span><i><b style={{ width: "72%" }} /></i><em>72</em></div>
-              <div><span>Trust</span><i><b style={{ width: "58%" }} /></i><em>58</em></div>
-              <div><span>Distinction</span><i><b style={{ width: "86%" }} /></i><em>86</em></div>
-              <p>Illustrative baseline · no real data</p>
-            </div>
-          </div>
-          <ul className="data-rules">
-            {brandDna.informationAndData.rules.map((rule, index) => <li key={rule}><b>{String(index + 1).padStart(2, "0")}</b><span>{rule}</span></li>)}
-          </ul>
-        </section>
-
-        <section className="chapter accessibility tab-panel" id="panel-accessibility" role="tabpanel" aria-labelledby="tab-accessibility" hidden={activeTab !== "accessibility"}>
-          <div className="section-head light">
-            <div>
-              <p className="eyebrow">Responsibility</p>
-              <h2 id="access-title">Accessibility & boundaries</h2>
-            </div>
-            <p>{brandDna.accessibility.principle}</p>
-          </div>
-          <div className="access-grid">
-            <div className="contrast-demo">
-              <p className="field-label">Text contrast</p>
-              <div className="contrast-pair"><span>Aa</span><div><b>Ink / Paper</b><p>15.1:1 · AAA</p></div></div>
-              <div className="contrast-pair inverse"><span>Aa</span><div><b>Paper / Ink</b><p>15.1:1 · AAA</p></div></div>
-            </div>
-            <div className="access-list">
-              {brandDna.accessibility.rules.map((rule, index) => <div key={rule}><b>{["Reading", "Interaction", "Motion", "Language"][index]}</b><p>{rule}</p></div>)}
-            </div>
-          </div>
-          <div className="limits">
-            <p className="field-label">Usage boundaries</p>
-            <div>
-              <p><b>Never use the brand to:</b> {brandDna.accessibility.boundaries.join(" ")}</p>
-              <p><b>Keep it simple:</b> if expression makes critical information harder to understand, remove the expression.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="chapter channels tab-panel" id="panel-channels" role="tabpanel" aria-labelledby="tab-channels" hidden={activeTab !== "channels"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Adaptation</p>
-              <h2 id="channels-title">Channel profiles</h2>
-            </div>
-            <p>The channel changes intensity and format. The central idea, voice, and boundaries remain.</p>
-          </div>
-          <div className="channel-constant">
-            <p className="field-label">Adaptation rule</p>
-            <p><b>Preserve:</b> promise, principles, essential vocabulary, contrast, and ethical criteria.</p>
-            <p><b>Adapt:</b> density, rhythm, proportion, call to action, and degree of expressiveness.</p>
-          </div>
-          <div className="channel-grid">
-            {brandDna.channels.map((channel, index) => (
-              <article className={`channel-card ${["channel-deck", "channel-proposal", "channel-social", "channel-web", "channel-bi"][index]}`} key={channel.name}>
-                <span>{channel.name.toUpperCase()}</span><h3>{channel.rule}</h3>
-                <ul><li>{channel.job}</li><li>Preserve the central idea</li><li>Adapt density and rhythm</li></ul>
-              </article>
-            ))}
-          </div>
-          <div className="channel-prompt">
-            <span>CHANNEL PROMPT</span>
-            <p>“Apply the <b>[channel]</b> profile. Preserve brand invariants and adapt only the properties declared as flexible.”</p>
-          </div>
-        </section>
-
-        <section className="chapter implementation tab-panel" id="panel-ai-contract" role="tabpanel" aria-labelledby="tab-ai-contract" hidden={activeTab !== "ai-contract"}>
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Operational layer</p>
-              <h2 id="implementation-title">AI contract</h2>
-            </div>
-            <p>The page and every agent read the same source. There is nothing to synchronize.</p>
-          </div>
-          <div className="system-flow" aria-label="Relationship between Brand DNA, design tokens, and channel implementation">
-            <article className="flow-dna"><span>01 / Meaning</span><h3>Brand DNA</h3><p>Essence, principles, voice, imagery, and behavior.</p></article>
-            <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-tokens"><span>02 / Contract</span><h3>One JSON file</h3><p>Meaning, rules, tokens, channels, and provenance in one portable source.</p></article>
-            <div className="flow-arrow" aria-hidden="true">→</div>
-            <article className="flow-channels"><span>03 / Execution</span><h3>Agent + channel</h3><ul><li>Reads the same truth</li><li>Adapts the format</li><li>Produces the material</li><li>Keeps the brand coherent</li></ul></article>
-          </div>
-          <div className="machine-grid">
-            <div className="file-tree">
-              <p className="field-label">Canonical package</p>
-              <pre>{`brand/
-└── brand-dna.json`}</pre>
-            </div>
-            <div className="contract-anatomy">
-              <p className="field-label">Provenance of every decision</p>
-              <dl>
-                <div><dt>evidence</dt><dd>Found directly in source material</dd></div>
-                <div><dt>decision</dt><dd>Explicitly chosen by the designer</dd></div>
-                <div><dt>proposal</dt><dd>Recommended by the builder for review</dd></div>
-                <div><dt>missing</dt><dd>Still needs an answer or an asset</dd></div>
+            <section className="color-scale-system" aria-labelledby="color-scale-heading">
+              <div className="color-scale-head"><div><p className="field-label">Generated system</p><h2 id="color-scale-heading">Light to dark</h2></div><p>Signal anchors Paper and Ink. Border uses Ink at an editable 20% opacity by default.</p></div>
+              {resolvedBaseColors.map((color) => <ColorScale
+                key={color.name}
+                name={color.name}
+                hex={color.value}
+                settings={getEffectiveColorScale(brandDna, color.name)}
+                markers={color.name === "Signal" ? [
+                  { stop: brandDna.visual.semanticColors.paper.stop, label: "Paper" },
+                  { stop: brandDna.visual.semanticColors.ink.stop, label: "Ink" },
+                ] : undefined}
+              />)}
+              <dl className="color-scale-formula">
+                <div><dt>Hue drift</dt><dd>{brandDna.visual.colorScale.hueMultiplier.toFixed(2)}×{brandDna.visual.colorScale.hueFlip ? " · Flipped" : ""}</dd></div>
+                <div><dt>Saturation drift</dt><dd>{brandDna.visual.colorScale.saturationMultiplier.toFixed(2)}×{brandDna.visual.colorScale.saturationFlip ? " · Flipped" : ""}</dd></div>
+                <div><dt>Scale contrast</dt><dd>{brandDna.visual.colorScale.contrast.toFixed(2)}×</dd></div>
               </dl>
+            </section>
+            <div className="color-pairs">
+              {contrastColors.map(({ base, contrast }) => <article
+                className="pair-auto"
+                key={base.name}
+                style={{ backgroundColor: base.value, color: contrast.value }}
+              >
+                <span>Aa</span>
+                <div><b>{base.name} / Contrast</b><p>{contrast.value} · Stop {contrast.stop} · {contrast.ratio.toFixed(2)}:1</p></div>
+              </article>)}
             </div>
-          </div>
-          <div className="download-group">
-            <div>
-              <p className="field-label">Single source of truth</p>
-              <h3>Ready for people and agents.</h3>
-            </div>
-            <div className="download-list">
-              <a href={brandDnaDownloadUrl} download><span>Download the complete Brand DNA</span><code>.json ↓</code></a>
-            </div>
-          </div>
-          <div className="scope-note">
-            <span>WHY ONE FILE</span>
-            <p>Strategy, expression, tokens, and channel rules evolve together. The website imports this file directly, eliminating duplicated truth.</p>
-          </div>
-        </section>
+            <p className="inline-rule"><b>Rule:</b> Never use color as the only carrier of meaning.</p>
+          </Chapter>
+        </div>
 
-        <section className="chapter builder tab-panel" id="panel-build-yours" role="tabpanel" aria-labelledby="tab-build-yours" hidden={activeTab !== "build-yours"}>
-          <div className="section-head light">
-            <div>
-              <p className="eyebrow">Minimum viable Brand DNA</p>
-              <h2 id="builder-title">Build yours</h2>
+        <div hidden={activeTab !== "layout"}>
+          <Chapter id="layout" eyebrow="05 / Structure" title="Layout" note="Build rhythm with columns, space, and alignment." className="layout-page">
+            <div className="grid-specimen" aria-label="Twelve-column grid demonstration">
+              {Array.from({ length: 12 }, (_, index) => <i key={index} />)}
+              <strong>12</strong><span>columns</span>
             </div>
-            <p>One folder, eight questions, one source of truth. The builder handles the rest.</p>
-          </div>
-          <ol className="builder-flow">
-            <li><span>01</span><b>Add what you have</b><p>Drop existing material into <code>references/</code>, or leave it empty.</p></li>
-            <li><span>02</span><b>Answer eight questions</b><p>The builder skips anything already supported by reliable evidence.</p></li>
-            <li><span>03</span><b>Review the direction</b><p>Evidence, decisions, proposals, and gaps remain visibly different.</p></li>
-            <li><span>04</span><b>Use your Brand DNA</b><p>The site and other agents read the same structured file.</p></li>
-          </ol>
-          <div className="question-block">
-            <p className="field-label">The complete brief</p>
-            <ol className="question-grid">
-              {[
-                "What does the brand offer?",
-                "Who is it for?",
-                "What perception should it build?",
-                "Which three characteristics should define it?",
-                "What must it never feel like?",
-                "How should it speak?",
-                "Which visual references feel relevant?",
-                "Where will the identity be used most?",
-              ].map((question, index) => <li key={question}><span>{String(index + 1).padStart(2, "0")}</span>{question}</li>)}
-            </ol>
-          </div>
-          <div className="provenance-grid">
-            <article><span>EVIDENCE</span><h3>Found</h3><p>Directly supported by a reference.</p></article>
-            <article><span>DECISION</span><h3>Chosen</h3><p>Explicitly supplied by the designer.</p></article>
-            <article><span>PROPOSAL</span><h3>Suggested</h3><p>A creative recommendation from the builder.</p></article>
-            <article><span>MISSING</span><h3>Open</h3><p>The shortest list of what still needs to exist.</p></article>
-          </div>
-          <div className="starter-prompt">
-            <span>START IN CODEX</span>
-            <p>Use <b>$brand-dna-builder</b> to build my Brand DNA.</p>
-          </div>
-        </section>
+            <div className="layout-details">
+              <article className="spacing-block"><p className="field-label">Spacing scale</p>{Object.entries(brandDna.visual.spacing).map(([name, value]) => <div key={name}><i style={{ width: value }} /><code>{name} / {value}</code></div>)}</article>
+              <article className="composition-demo"><p className="field-label">Composition</p><div><span /><span /><span /></div><p>Align to the grid. Change scale before adding decoration.</p></article>
+              <article className="shape-block"><p className="field-label">Shape</p><div><i style={{ borderRadius: brandDna.visual.radii.small }} /><i style={{ borderRadius: brandDna.visual.radii.medium }} /><i style={{ borderRadius: brandDna.visual.radii.full }} /></div><p>Use radius only when it clarifies grouping or interaction.</p></article>
+            </div>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "imagery"}>
+          <Chapter id="imagery" eyebrow="06 / Art direction" title="Imagery" note={brandDna.imagery.principle} className="imagery-page">
+            <div className="image-gallery">
+              {brandDna.imagery.directions.map((direction, index) => (
+                <figure className={`image-placeholder image-${index + 1}`} key={direction.name}>
+                  <div className="crop-marks"><span /><span /><span /><span /></div>
+                  <div className="image-art" aria-hidden="true"><i /><i /><i /></div>
+                  <figcaption><b>{direction.name}</b><span>{direction.description}</span></figcaption>
+                </figure>
+              ))}
+            </div>
+            <div className="do-dont"><div><b>DO</b><p>{brandDna.imagery.do}</p></div><div><b>AVOID</b><p>{brandDna.imagery.avoid}</p></div></div>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "iconography"}>
+          <Chapter id="iconography" eyebrow="07 / Symbol system" title="Iconography" note={brandDna.iconography.principle} className="icon-page">
+            <div className="icon-grid">
+              <LineIcon name="Create"><path d="M24 8v32M8 24h32" /></LineIcon>
+              <LineIcon name="Move"><path d="M8 24h30M28 14l10 10-10 10" /></LineIcon>
+              <LineIcon name="Save"><path d="M12 8h20l4 4v28H12zM18 8v12h12V8M18 32h12" /></LineIcon>
+              <LineIcon name="View"><path d="M5 24s7-11 19-11 19 11 19 11-7 11-19 11S5 24 5 24z" /><circle cx="24" cy="24" r="5" /></LineIcon>
+              <LineIcon name="Connect"><circle cx="12" cy="24" r="5" /><circle cx="36" cy="12" r="5" /><circle cx="36" cy="36" r="5" /><path d="m17 22 14-8M17 26l14 8" /></LineIcon>
+              <LineIcon name="Confirm"><circle cx="24" cy="24" r="18" /><path d="m15 24 6 6 13-14" /></LineIcon>
+            </div>
+            <div className="icon-rules">
+              <div><p className="field-label">Grid</p><b>{brandDna.iconography.grid}</b><span>Design on a consistent optical field.</span></div>
+              <div><p className="field-label">Stroke</p><b>{brandDna.iconography.stroke}</b><span>Keep weight consistent at the base size.</span></div>
+              <div><p className="field-label">Corners</p><b>{brandDna.iconography.corners}</b><span>Use one corner logic across the set.</span></div>
+              <div><p className="field-label">Style</p><b>{brandDna.iconography.style}</b><span>Use fill only for selected states.</span></div>
+            </div>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "motion"}>
+          <Chapter id="motion" eyebrow="08 / Behavior" title="Motion" note="Explain change. Show cause and effect." className="motion-page">
+            <div className="motion-stage">
+              <div className="motion-orbit"><i /><span>Enter with direction.<br />Remain at rest.</span></div>
+              <div><p className="field-label">Core principle</p><h2>{brandDna.motionAndSound.principle}</h2></div>
+            </div>
+            <div className="motion-tokens">
+              <article><span>Fast</span><b>{brandDna.motionAndSound.motion.fast}</b><i className="m-fast" /></article>
+              <article><span>Standard</span><b>{brandDna.motionAndSound.motion.standard}</b><i className="m-base" /></article>
+              <article><span>Expressive</span><b>{brandDna.motionAndSound.motion.expressive}</b><i className="m-slow" /></article>
+              <article><span>Easing</span><b>{brandDna.motionAndSound.motion.easing}</b><i className="m-curve" /></article>
+            </div>
+            <p className="inline-rule"><b>Rule:</b> Respect reduced-motion preferences. Ambient motion is optional.</p>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "voice"}>
+          <Chapter id="voice" eyebrow="09 / Language" title="Voice & Tone" note="Say what matters. Adapt the energy, not the point of view." className="voice-page">
+            <div className="voice-lead"><p className="field-label">Voice in one sentence</p><blockquote>“{brandDna.voice.intent}”</blockquote></div>
+            <div className="voice-rules">{brandDna.voice.rules.map((rule, index) => <article key={rule}><span>0{index + 1}</span><h2>{rule}</h2></article>)}</div>
+            <div className="tone-table" role="table" aria-label="Tone by context">
+              <div role="row"><b role="cell">Guide</b><span role="cell">Clear + calm</span><p role="cell">“Start here. You can review it later.”</p></div>
+              <div role="row"><b role="cell">Celebrate</b><span role="cell">Warm + brief</span><p role="cell">“All set. Your next step is ready.”</p></div>
+              <div role="row"><b role="cell">Correct</b><span role="cell">Direct + useful</span><p role="cell">“This field needs a future date.”</p></div>
+            </div>
+            <div className="word-bank"><div><b>USE</b><p>{brandDna.voice.preferredVocabulary.join(" · ")}</p></div><div><b>AVOID</b><p>{brandDna.voice.avoidVocabulary.join(" · ")}</p></div></div>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "applications"}>
+          <Chapter id="applications" eyebrow="10 / In use" title="Applications" note="One identity. Different formats and levels of intensity." className="applications-page">
+            <div className="application-grid">
+              {brandDna.channels.map((channel, index) => (
+                <article className={`application-card ${["app-web", "app-presentation", "app-bi", "app-social"][index]}`} key={channel.name}>
+                  <span>{channel.name}</span>
+                  <div className="application-art" aria-hidden="true"><i /><i /><i /></div>
+                  <p>{channel.rule}</p>
+                </article>
+              ))}
+            </div>
+            <div className="application-rule"><p className="field-label">Across every format</p><p>Preserve the logo, type hierarchy, palette logic, image direction, and voice. Adapt scale, density, and rhythm.</p></div>
+          </Chapter>
+        </div>
 
         <footer>
           <div className="footer-mark"><span>DNA</span><i /></div>
-          <p>Open-source starter for a minimum viable Brand DNA.</p>
-          <button type="button" onClick={() => selectTab("overview")}>Overview <span aria-hidden="true">→</span></button>
+          <p>Practical brand guidelines for people and agents.</p>
+          <button type="button" onClick={() => selectTab("principles")}>Principles <span aria-hidden="true">↑</span></button>
         </footer>
       </div>
+      {isEditing && <EditorPanel
+        section={activeTab}
+        draft={draft}
+        directions={directions}
+        changeCount={changes.length}
+        comparing={comparing}
+        status={status}
+        onChange={updateDraft}
+        onDirections={(next) => { setDirections(next); setStatus(""); }}
+        onCompare={() => setComparing((current) => !current)}
+        onCopy={copyPrompt}
+        onDownload={downloadChanges}
+        onReset={resetDraft}
+        onClose={() => { setIsEditing(false); setComparing(false); }}
+      />}
     </main>
   );
 }
