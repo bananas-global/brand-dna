@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { ArrowRight, CircleCheck, Eye, Plus, Save, Share2, type LucideIcon } from "lucide-react";
 import {
   buildChangeRequest,
   buildUpdatePrompt,
@@ -6,7 +7,6 @@ import {
   draftStorageKey,
   reconcileColorBases,
   setAtPath,
-  type EditorDirections,
   type JsonValue,
 } from "./editor";
 import { generateColorScale, getColorAtStop, getContrastColor, getScaleTones, resolveBaseColorValue } from "./color-scale";
@@ -37,19 +37,30 @@ const initialBrandDna: BrandDna = {
 };
 
 const sections = [
-  ["principles", "Principles"],
+  ["about", "About"],
   ["logo", "Logo"],
   ["typography", "Typography"],
   ["color", "Color"],
-  ["layout", "Layout"],
+  ["borders", "Borders"],
+  ["shadows", "Shadows"],
   ["imagery", "Imagery"],
   ["iconography", "Iconography"],
-  ["motion", "Motion"],
   ["voice", "Voice & Tone"],
   ["applications", "Applications"],
 ] as const;
 
 type SectionId = (typeof sections)[number][0];
+
+const borderThicknessValues = { thin: 1, medium: 2, bold: 4 } as const;
+type BorderThickness = keyof typeof borderThicknessValues;
+
+const iconLibraries = [
+  { name: "Lucide", url: "https://lucide.dev/icons/", variants: ["Outline"] },
+  { name: "Phosphor", url: "https://phosphoricons.com/", variants: ["Thin", "Light", "Regular", "Bold", "Fill", "Duotone"] },
+  { name: "Material Symbols", url: "https://fonts.google.com/icons", variants: ["Outlined", "Rounded", "Sharp"] },
+  { name: "Heroicons", url: "https://heroicons.com/", variants: ["Outline", "Solid", "Mini", "Micro"] },
+  { name: "Font Awesome Free", url: "https://fontawesome.com/search?o=r&m=free", variants: ["Solid", "Regular", "Brands"] },
+] as const;
 
 const getEffectiveColorScale = (brandDna: BrandDna, colorName: string): ColorScaleSettings => {
   const linkedScale = brandDna.visual.colorScales?.[colorName];
@@ -58,12 +69,26 @@ const getEffectiveColorScale = (brandDna: BrandDna, colorName: string): ColorSca
     : brandDna.visual.colorScale;
 };
 
-const Swatch = ({ name, hex, role, displayValue = hex }: { name: string; hex: string; role: string; displayValue?: string }) => (
-  <article className="swatch">
-    <div className="swatch-color" style={{ backgroundColor: hex }} aria-hidden="true" />
-    <div className="swatch-meta"><b>{name}</b><code>{displayValue}</code></div>
-    <p>{role}</p>
+const SpecimenCard = ({ name, value, description, className = "", children }: {
+  name: string;
+  value: string;
+  description: string;
+  className?: string;
+  children: ReactNode;
+}) => (
+  <article className={`specimen-card ${className}`.trim()}>
+    <div className="specimen-card-visual">{children}</div>
+    <div className="specimen-card-caption">
+      <div className="specimen-card-meta"><b>{name}</b><code>{value}</code></div>
+      <p>{description}</p>
+    </div>
   </article>
+);
+
+const Swatch = ({ name, hex, role, displayValue = hex }: { name: string; hex: string; role: string; displayValue?: string }) => (
+  <SpecimenCard className="swatch" name={name} value={displayValue} description={role}>
+    <span className="swatch-color" style={{ backgroundColor: hex }} aria-hidden="true" />
+  </SpecimenCard>
 );
 
 const ColorScale = ({ name, hex, settings, markers }: {
@@ -123,22 +148,37 @@ const Chapter = ({ id, eyebrow, title, note, className = "", children }: {
   </section>
 );
 
-const LineIcon = ({ name, children }: { name: string; children: ReactNode }) => (
+const LibraryIcon = ({ name, icon: Icon }: { name: string; icon: LucideIcon }) => (
   <figure className="icon-card">
-    <svg viewBox="0 0 48 48" role="img" aria-label={name}>{children}</svg>
+    <Icon aria-hidden="true" />
     <figcaption>{name}</figcaption>
   </figure>
+);
+
+const LogoVariant = ({ name, file, usage, tone = "light", compact = false }: {
+  name: string;
+  file: string;
+  usage: string;
+  tone?: "light" | "dark";
+  compact?: boolean;
+}) => (
+  <SpecimenCard
+    className={`logo-variant logo-variant-${tone}${compact ? " is-compact" : ""}`}
+    name={name}
+    value={file}
+    description={usage}
+  >
+    <img src={`/brand-dna/brand/logo/${file}`} alt={`${name} logo example`} />
+  </SpecimenCard>
 );
 
 type EditorPanelProps = {
   section: SectionId;
   draft: BrandDna;
-  directions: EditorDirections;
   changeCount: number;
   comparing: boolean;
   status: string;
   onChange: (path: string, value: JsonValue) => void;
-  onDirections: (directions: EditorDirections) => void;
   onCompare: () => void;
   onCopy: () => void;
   onDownload: () => void;
@@ -177,7 +217,26 @@ const RangeField = ({ label, ariaLabel = label, value, min, max, step = 1, unit,
   </label>
 );
 
-type TypographyRole = "display" | "body" | "utility";
+const OptionField = ({ label, value, options, onChange }: {
+  label: string;
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+}) => (
+  <fieldset className="editor-option-field">
+    <legend>{label}</legend>
+    <div className="editor-mode-toggle">
+      {options.map((option) => <button
+        type="button"
+        key={option}
+        aria-pressed={value === option}
+        onClick={() => onChange(option)}
+      >{option}</button>)}
+    </div>
+  </fieldset>
+);
+
+type TypographyRole = "headings" | "body" | "utility";
 
 const FontRoleEditor = ({ fontRole, font, onChange }: {
   fontRole: TypographyRole;
@@ -279,8 +338,6 @@ const ScaleControls = ({ name, settings, onChange }: {
   </div>;
 };
 
-const numberFromToken = (value: string) => Number.parseFloat(value) || 0;
-
 const withOpacity = (hex: string, opacity: number) => {
   const normalized = hex.replace("#", "");
   const red = Number.parseInt(normalized.slice(0, 2), 16);
@@ -289,7 +346,33 @@ const withOpacity = (hex: string, opacity: number) => {
   return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
 };
 
-function EditorPanel({ section, draft, directions, changeCount, comparing, status, onChange, onDirections, onCompare, onCopy, onDownload, onReset, onClose }: EditorPanelProps) {
+type ShadowSize = "sm" | "md" | "lg";
+type ShadowToken = BrandDna["visual"]["shadows"]["base"];
+
+const getDerivedShadow = (base: ShadowToken, multiplier: number, size: ShadowSize): ShadowToken => {
+  const factor = size === "sm" ? 1 / multiplier : size === "lg" ? multiplier : 1;
+  const scale = (value: number) => Math.round(value * factor * 10) / 10;
+  return {
+    ...base,
+    distance: scale(base.distance),
+    blur: scale(base.blur),
+    spread: scale(base.spread),
+  };
+};
+
+const getShadowCss = (
+  token: ShadowToken,
+  baseHex: string,
+  settings: ColorScaleSettings,
+) => {
+  const radians = token.angle * Math.PI / 180;
+  const x = Math.round(Math.cos(radians) * token.distance * 100) / 100;
+  const y = Math.round(Math.sin(radians) * token.distance * 100) / 100;
+  const color = withOpacity(getColorAtStop(baseHex, settings, token.colorStop), token.opacity);
+  return `${x}px ${y}px ${token.blur}px ${token.spread}px ${color}`;
+};
+
+function EditorPanel({ section, draft, changeCount, comparing, status, onChange, onCompare, onCopy, onDownload, onReset, onClose }: EditorPanelProps) {
   const sectionLabel = sections.find(([id]) => id === section)?.[1];
   const signal = draft.visual.colors.find((color) => color.name === "Signal") ?? draft.visual.colors[0];
   const border = draft.visual.semanticColors.border;
@@ -301,20 +384,17 @@ function EditorPanel({ section, draft, directions, changeCount, comparing, statu
   </div>;
 
   const controls: Record<SectionId, ReactNode> = {
-    principles: <>
-      <Field label="Central idea" value={draft.essence.centralIdea} onChange={(value) => onChange("essence.centralIdea", value)} multiline />
-      {draft.expressionPrinciples.map((principle, index) => <div className="editor-group" key={index}>
-        <Field label={`Principle ${index + 1}`} value={principle.name} onChange={(value) => onChange(`expressionPrinciples[${index}].name`, value)} />
-        <Field label="Intent" value={principle.intent} onChange={(value) => onChange(`expressionPrinciples[${index}].intent`, value)} multiline />
-      </div>)}
+    about: <>
+      <Field label="Brand name" value={draft.meta.brandName} onChange={(value) => onChange("meta.brandName", value)} />
+      <Field label="Purpose" value={draft.essence.purpose} onChange={(value) => onChange("essence.purpose", value)} multiline />
     </>,
-    logo: <Field label="Signature rule" value={draft.visual.signatureRule} onChange={(value) => onChange("visual.signatureRule", value)} multiline />,
+    logo: null,
     typography: <>
       <div className="editor-font-source">
         <p>Choose each typeface in Google Fonts, copy its link, and paste it into the matching field below.</p>
         <a href="https://fonts.google.com/" target="_blank" rel="noreferrer">Open Google Fonts ↗</a>
       </div>
-      <FontRoleEditor fontRole="display" font={draft.visual.typography.display} onChange={onChange} />
+      <FontRoleEditor fontRole="headings" font={draft.visual.typography.headings} onChange={onChange} />
       <FontRoleEditor fontRole="body" font={draft.visual.typography.body} onChange={onChange} />
       <FontRoleEditor fontRole="utility" font={draft.visual.typography.utility} onChange={onChange} />
     </>,
@@ -389,30 +469,85 @@ function EditorPanel({ section, draft, directions, changeCount, comparing, statu
         </Fragment>;
       })}
     </>,
-    layout: <>
-      {Object.entries(draft.visual.spacing).map(([name, value]) => <RangeField key={name} label={`Space ${name}`} value={numberFromToken(value)} min={0} max={96} step={2} unit="px" onChange={(next) => onChange(`visual.spacing.${name}`, `${next}px`)} />)}
-      {Object.entries(draft.visual.radii).map(([name, value]) => <RangeField key={name} label={`${name} radius`} value={numberFromToken(value)} min={0} max={name === "full" ? 999 : 48} unit="px" onChange={(next) => onChange(`visual.radii.${name}`, `${next}px`)} />)}
+    borders: <>
+      <OptionField label="Border thickness" value={draft.visual.borders.thickness} options={["thin", "medium", "bold"]} onChange={(value) => onChange("visual.borders.thickness", value)} />
+      <RangeField label="Corner radius" value={draft.visual.borders.radius} min={0} max={3} step={0.1} unit="rem" onChange={(value) => onChange("visual.borders.radius", value)} />
+      <OptionField label="Button pill" value={draft.visual.borders.buttonPill ? "on" : "off"} options={["off", "on"]} onChange={(value) => onChange("visual.borders.buttonPill", value === "on")} />
+    </>,
+    shadows: <>
+      <p className="editor-shadow-note">MD is the base shadow. SM divides its geometry by the multiplier; LG multiplies it. Angle and color stay consistent.</p>
+      <section className="editor-shadow-entry" aria-label="Shadow scale controls">
+        <p className="editor-palette-label">Base shadow <span>MD</span></p>
+        <RangeField label="Distance" value={draft.visual.shadows.base.distance} min={0} max={48} unit="px" onChange={(value) => onChange("visual.shadows.base.distance", value)} />
+        <RangeField label="Angle" value={draft.visual.shadows.base.angle} min={0} max={360} unit="°" onChange={(value) => onChange("visual.shadows.base.angle", value)} />
+        <RangeField label="Blur" value={draft.visual.shadows.base.blur} min={0} max={96} unit="px" onChange={(value) => onChange("visual.shadows.base.blur", value)} />
+        <RangeField label="Spread" value={draft.visual.shadows.base.spread} min={-16} max={32} unit="px" onChange={(value) => onChange("visual.shadows.base.spread", value)} />
+        <SemanticStopSelect label="Color" sourceName="Signal" value={draft.visual.shadows.base.colorStop} min={0} max={1000} baseHex={signal.value} settings={draft.visual.colorScale} onChange={(value) => onChange("visual.shadows.base.colorStop", value)} />
+        <RangeField label="Opacity" value={Math.round(draft.visual.shadows.base.opacity * 100)} min={0} max={100} unit="%" onChange={(value) => onChange("visual.shadows.base.opacity", value / 100)} />
+        <RangeField label="Scale multiplier" value={draft.visual.shadows.multiplier} min={1} max={3} step={0.1} unit="×" onChange={(value) => onChange("visual.shadows.multiplier", value)} />
+      </section>
     </>,
     imagery: <>
-      <Field label="Image principle" value={draft.imagery.principle} onChange={(value) => onChange("imagery.principle", value)} multiline />
-      <Field label="Do" value={draft.imagery.do} onChange={(value) => onChange("imagery.do", value)} multiline />
-      <Field label="Avoid" value={draft.imagery.avoid} onChange={(value) => onChange("imagery.avoid", value)} multiline />
+      <div className="editor-asset-note">
+        <p>Drop your image files into:</p>
+        <code>public/brand/imagery/</code>
+      </div>
+      {draft.imagery.directions.map((direction, index) => <section className="editor-imagery-entry" key={`${direction.asset}-${index}`}>
+        <p className="editor-palette-label">Image {String(index + 1).padStart(2, "0")}</p>
+        <Field label="Title" value={direction.name} onChange={(value) => onChange(`imagery.directions[${index}].name`, value)} />
+        <Field label="Description" value={direction.description} onChange={(value) => onChange(`imagery.directions[${index}].description`, value)} multiline />
+        <Field label="Prompt" value={direction.prompt} onChange={(value) => onChange(`imagery.directions[${index}].prompt`, value)} multiline />
+      </section>)}
     </>,
     iconography: <>
-      <Field label="Grid" value={draft.iconography.grid} onChange={(value) => onChange("iconography.grid", value)} />
-      <Field label="Stroke" value={draft.iconography.stroke} onChange={(value) => onChange("iconography.stroke", value)} />
-      <Field label="Corners" value={draft.iconography.corners} onChange={(value) => onChange("iconography.corners", value)} />
-      <Field label="Style" value={draft.iconography.style} onChange={(value) => onChange("iconography.style", value)} />
-    </>,
-    motion: <>
-      <Field label="Motion principle" value={draft.motionAndSound.principle} onChange={(value) => onChange("motionAndSound.principle", value)} multiline />
-      {Object.entries(draft.motionAndSound.motion).filter(([name]) => name !== "easing").map(([name, value]) => <RangeField key={name} label={name} value={numberFromToken(value)} min={80} max={1200} step={20} unit="ms" onChange={(next) => onChange(`motionAndSound.motion.${name}`, `${next}ms`)} />)}
-      <Field label="Easing" value={draft.motionAndSound.motion.easing} onChange={(value) => onChange("motionAndSound.motion.easing", value)} />
+      <div className="editor-icon-source">
+        <p>Bring your own icons. Choose one open-source library, then keep its visual language consistent across applications.</p>
+        <div className="editor-icon-libraries" role="radiogroup" aria-label="Icon library">
+          {iconLibraries.map((library) => <div className="editor-icon-library" key={library.name}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={draft.iconography.library === library.name}
+              onClick={() => {
+                onChange("iconography.library", library.name);
+                onChange("iconography.variant", library.variants[0]);
+                onChange("iconography.source", library.url);
+              }}
+            >{library.name}</button>
+            <a href={library.url} target="_blank" rel="noreferrer" aria-label={`Visit ${library.name}`}>Visit ↗</a>
+          </div>)}
+        </div>
+      </div>
+      <label className="editor-field editor-icon-variant">
+        <span>Variant</span>
+        <select
+          aria-label="Icon library variant"
+          value={draft.iconography.variant}
+          onChange={(event) => onChange("iconography.variant", event.target.value)}
+        >
+          {(iconLibraries.find(({ name }) => name === draft.iconography.library)?.variants ?? [draft.iconography.variant]).map((variant) => <option key={variant} value={variant}>{variant}</option>)}
+        </select>
+      </label>
+      <p className="editor-icon-note">The published examples update after the selected library is installed in the project.</p>
     </>,
     voice: <>
-      <Field label="Voice intent" value={draft.voice.intent} onChange={(value) => onChange("voice.intent", value)} multiline />
-      <Field label="Preferred words" value={draft.voice.preferredVocabulary.join(", ")} onChange={(value) => onChange("voice.preferredVocabulary", value.split(",").map((word) => word.trim()).filter(Boolean))} multiline />
-      <Field label="Words to avoid" value={draft.voice.avoidVocabulary.join(", ")} onChange={(value) => onChange("voice.avoidVocabulary", value.split(",").map((word) => word.trim()).filter(Boolean))} multiline />
+      <div className="editor-voice-dimensions">
+        {draft.voice.dimensions.map((dimension, index) => <label className="editor-voice-dimension" key={dimension.name}>
+          <span><b>{dimension.left}</b><em>{dimension.name}</em><b>{dimension.right}</b></span>
+          <input
+            aria-label={`${dimension.left} to ${dimension.right}`}
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={dimension.value}
+            onInput={(event) => onChange(`voice.dimensions[${index}].value`, Number(event.currentTarget.value))}
+          />
+          <p>{dimension.description}</p>
+        </label>)}
+      </div>
+      <Field label="Say" value={draft.voice.say} onChange={(value) => onChange("voice.say", value)} multiline />
+      <Field label="Don’t say" value={draft.voice.dontSay} onChange={(value) => onChange("voice.dontSay", value)} multiline />
     </>,
     applications: <>{draft.channels.map((channel, index) => <div className="editor-group" key={channel.name}>
       <p className="editor-locked">{channel.name}<span>Fixed format</span></p>
@@ -426,19 +561,14 @@ function EditorPanel({ section, draft, directions, changeCount, comparing, statu
       <button type="button" aria-label="Close editor" onClick={onClose}>×</button>
     </header>
     <div className="editor-scroll">
-      {section === "principles" && <section className="editor-direction" aria-labelledby="direction-heading">
-          <h2 id="direction-heading">Direction</h2>
-          <Field label="Should feel like" value={directions.desired} onChange={(desired) => onDirections({ ...directions, desired })} multiline />
-          <Field label="Should not feel like" value={directions.avoided} onChange={(avoided) => onDirections({ ...directions, avoided })} multiline />
-        </section>}
-      <section className="editor-controls" aria-labelledby="controls-heading">
+      {section !== "logo" && <section className="editor-controls" aria-labelledby="controls-heading">
         <h2 id="controls-heading">{sectionLabel}</h2>
         {controls[section]}
-      </section>
+      </section>}
     </div>
     <div className="editor-actions">
       <button type="button" aria-label={comparing ? "Show draft" : "Compare original"} onClick={onCompare}>{comparing ? "Draft" : "Compare"}</button>
-      <button type="button" aria-label="Copy update prompt" onClick={onCopy} disabled={changeCount === 0 && !directions.desired && !directions.avoided}>Copy</button>
+      <button type="button" aria-label="Copy update prompt" onClick={onCopy} disabled={changeCount === 0}>Copy</button>
       <button type="button" aria-label="Download changes" onClick={onDownload} disabled={changeCount === 0}>Download</button>
       <button className="editor-reset" type="button" aria-label="Reset draft" onClick={onReset} disabled={changeCount === 0}>Reset</button>
       <p role="status" aria-live="polite">{status || "Changes stay in this browser until you copy them."}</p>
@@ -447,7 +577,7 @@ function EditorPanel({ section, draft, directions, changeCount, comparing, statu
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<SectionId>("principles");
+  const [activeTab, setActiveTab] = useState<SectionId>("about");
   const [isEditing, setIsEditing] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [status, setStatus] = useState("");
@@ -461,17 +591,14 @@ export default function Home() {
       return structuredClone(initialBrandDna);
     }
   });
-  const [directions, setDirections] = useState<EditorDirections>(() => {
-    try {
-      const saved = localStorage.getItem(draftStorageKey);
-      return saved ? JSON.parse(saved).directions as EditorDirections : { desired: "", avoided: "" };
-    } catch {
-      return { desired: "", avoided: "" };
-    }
-  });
   const changes = useMemo(() => diffBrandDna(initialBrandDna, draft), [draft]);
   const brandDna = isEditing && !comparing ? draft : initialBrandDna;
   const typography = brandDna.visual.typography;
+  const borderDemoPadding = 16;
+  const borderThicknessName = brandDna.visual.borders.thickness as BorderThickness;
+  const borderThickness = borderThicknessValues[borderThicknessName] ?? borderThicknessValues.thin;
+  const borderRadius = Math.min(3, Math.max(0, brandDna.visual.borders.radius));
+  const borderRadiusCss = `${borderRadius}rem`;
   const signal = brandDna.visual.colors.find((item) => item.name === "Signal") ?? brandDna.visual.colors[0];
   const resolvedBaseColors = brandDna.visual.colors.map((base) => ({
     ...base,
@@ -480,10 +607,6 @@ export default function Home() {
   const ink = getColorAtStop(signal.value, brandDna.visual.colorScale, brandDna.visual.semanticColors.ink.stop);
   const borderToken = brandDna.visual.semanticColors.border;
   const border = withOpacity(ink, borderToken.opacity);
-  const contrastColors = resolvedBaseColors.map((base) => ({
-    base,
-    contrast: getContrastColor(base.value, getEffectiveColorScale(brandDna, base.name)),
-  }));
   const resolvedColors = [
     {
       name: "Ink",
@@ -521,16 +644,19 @@ export default function Home() {
     "--warning": color("warning", "#D99A16"),
     "--error": color("error", "#D94332"),
     "--line": border,
-    "--brand-display": `"${typography.display.family}", Georgia, serif`,
+    "--brand-headings": `"${typography.headings.family}", Georgia, serif`,
     "--brand-sans": `"${typography.body.family}", Arial, sans-serif`,
     "--brand-mono": `"${typography.utility.family}", monospace`,
-    "--brand-display-weight": typography.display.weight,
+    "--brand-headings-weight": typography.headings.weight,
     "--brand-body-weight": typography.body.weight,
     "--brand-utility-weight": typography.utility.weight,
+    "--content-border-width": `${borderThickness}px`,
+    "--content-radius": borderRadiusCss,
+    "--content-button-radius": brandDna.visual.borders.buttonPill ? "999px" : `${Math.min(borderRadius, 1)}rem`,
   } as CSSProperties;
 
   useEffect(() => {
-    const roles = ["display", "body", "utility"] as const;
+    const roles = ["headings", "body", "utility"] as const;
     const links = roles.flatMap((role) => {
       const stylesheet = buildGoogleFontStylesheet(typography[role].source, typography[role].weight);
       if (!stylesheet) return [];
@@ -545,13 +671,17 @@ export default function Home() {
   }, [typography]);
 
   useEffect(() => {
-    localStorage.setItem(draftStorageKey, JSON.stringify({ draft, directions }));
-  }, [draft, directions]);
+    localStorage.setItem(draftStorageKey, JSON.stringify({ draft }));
+  }, [draft]);
 
   useEffect(() => {
     const syncWithHash = () => {
-      const hash = window.location.hash.slice(1) as SectionId;
-      if (sections.some(([id]) => id === hash)) setActiveTab(hash);
+      const rawHash = window.location.hash.slice(1);
+      const hash = (rawHash === "principles" ? "about" : rawHash === "layout" ? "borders" : rawHash === "motion" ? "voice" : rawHash) as SectionId;
+      if (sections.some(([id]) => id === hash)) {
+        setActiveTab(hash);
+        if (rawHash === "principles" || rawHash === "layout" || rawHash === "motion") window.history.replaceState(null, "", `#${hash}`);
+      }
     };
     const frame = window.requestAnimationFrame(syncWithHash);
     window.addEventListener("hashchange", syncWithHash);
@@ -589,13 +719,13 @@ export default function Home() {
   }, []);
 
   const copyPrompt = async () => {
-    const prompt = buildUpdatePrompt(initialBrandDna, draft, directions);
+    const prompt = buildUpdatePrompt(initialBrandDna, draft);
     await navigator.clipboard.writeText(prompt);
     setStatus("Update prompt copied.");
   };
 
   const downloadChanges = () => {
-    const request = buildChangeRequest(initialBrandDna, draft, directions);
+    const request = buildChangeRequest(initialBrandDna, draft);
     const url = URL.createObjectURL(new Blob([JSON.stringify(request, null, 2)], { type: "application/json" }));
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -607,9 +737,8 @@ export default function Home() {
 
   const resetDraft = () => {
     setDraft(structuredClone(initialBrandDna));
-    setDirections({ desired: "", avoided: "" });
     setComparing(false);
-    setStatus("Draft and directions reset to the source JSON.");
+    setStatus("Draft reset to the source JSON.");
   };
 
   return (
@@ -617,10 +746,10 @@ export default function Home() {
       <a className="skip-link" href="#content">Skip to content</a>
 
       <header className="topbar" aria-label="Document header">
-        <button className="wordmark" type="button" onClick={() => selectTab("principles")} aria-label="Open principles">
+        <button className="wordmark" type="button" onClick={() => selectTab("about")} aria-label="Open About">
           <span>DNA</span><i aria-hidden="true" />
         </button>
-        <p>{comparing ? "Original source" : "Brand guidelines"}</p>
+        <p>{comparing ? "Original source" : `${brandDna.meta.brandName} brand guidelines`}</p>
         <div className="document-meta">
           <div className="mode-switch" aria-label="Preview mode">
             <button type="button" aria-pressed={!isEditing} onClick={() => { setIsEditing(false); setComparing(false); }}>View</button>
@@ -657,42 +786,36 @@ export default function Home() {
       </aside>
 
       <div className="page" id="content">
-        <div hidden={activeTab !== "principles"}>
-          <Chapter id="principles" eyebrow="01 / Foundation" title="Principles" note="The few decisions that guide every expression.">
-            <div className="principle-lead">
-              <p className="field-label">Central idea</p>
-              <blockquote>“{brandDna.essence.centralIdea}”</blockquote>
+        <div hidden={activeTab !== "about"}>
+          <Chapter id="about" eyebrow="01 / Introduction" title="About" note="The shortest useful introduction to the brand." className="about-page">
+            <div className="about-statement">
+              <p className="field-label">Brand name</p>
+              <h2>{brandDna.meta.brandName}</h2>
+              <p className="field-label">Purpose</p>
+              <p>{brandDna.essence.purpose}</p>
             </div>
-            <div className="principles-grid">
-              {brandDna.expressionPrinciples.map((principle, index) => (
-                <article key={principle.name}>
-                  <span>P{index + 1}</span><h2>{principle.name}</h2><p>{principle.intent}</p>
-                </article>
-              ))}
-            </div>
-            <dl className="foundation-strip">
-              <div><dt>Purpose</dt><dd>{brandDna.essence.purpose}</dd></div>
-              <div><dt>Promise</dt><dd>{brandDna.essence.promise}</dd></div>
-            </dl>
           </Chapter>
         </div>
 
         <div hidden={activeTab !== "logo"}>
-          <Chapter id="logo" eyebrow="02 / Signature" title="Logo" note="Protect the mark. Keep every application recognizable." className="logo-page">
-            <div className="logo-hero">
-              <div className="mark-demo"><span>[BRAND]</span><i /></div>
-              <div><p className="field-label">Primary signature</p><h2>{brandDna.visual.signatureRule}</h2></div>
+          <Chapter id="logo" eyebrow="02 / Signature" title="Logo" note="Use the right asset for the available space and background." className="logo-page">
+            <div className="logo-source-note">
+              <p className="field-label">Asset folder</p>
+              <code>public/brand/logo/</code>
+              <p>Replace the SVG files in this folder while keeping their filenames. The examples below update automatically.</p>
             </div>
-            <div className="logo-system">
-              <article className="clearspace-demo">
-                <p className="field-label">Clear space</p>
-                <div className="clearspace-box"><i /><b>[BRAND]</b><i /></div>
-                <p>Keep one signal width clear on every side.</p>
-              </article>
-              <article className="logo-pair logo-light"><span>[BRAND]</span><p>Light background</p></article>
-              <article className="logo-pair logo-dark"><span>[BRAND]</span><p>Dark background</p></article>
+            <div className="logo-variants" role="region" aria-label="Minimum logo asset set">
+              <LogoVariant name="Primary logo" file="default.svg" usage="Default choice for most brand applications." />
+              <LogoVariant name="Icon" file="icon.svg" usage="Square spaces, avatars, favicons, and app icons." compact />
+              <LogoVariant name="Wordmark" file="wordmark.svg" usage="Wide, shallow spaces where the symbol is unnecessary." />
+              <LogoVariant name="Black" file="black.svg" usage="Single-color reproduction on light backgrounds." />
+              <LogoVariant name="White" file="white.svg" usage="Reversed reproduction on dark backgrounds." tone="dark" />
             </div>
-            <ul className="compact-rules"><li>Do not stretch.</li><li>Do not add effects.</li><li>Do not alter proportions.</li></ul>
+            <div className="logo-usage-rules">
+              <div><b>Clear space</b><p>Keep at least one icon width clear around the logo.</p></div>
+              <div><b>Minimum size</b><p>Do not reproduce the logo below the point where its forms remain clear.</p></div>
+              <div><b>Never modify</b><p>Do not stretch, recolor, outline, rotate, or add effects.</p></div>
+            </div>
           </Chapter>
         </div>
 
@@ -700,15 +823,9 @@ export default function Home() {
           <Chapter id="typography" eyebrow="03 / Type system" title="Typography" note="Hierarchy first. Personality follows." className="type-page">
             <div className="type-marquee"><span>Aa</span><p>One system.<br />Three voices.</p></div>
             <div className="type-specimens">
-              <article className="type-display"><span>Display</span><p>Make the point visible.</p><code>{brandDna.visual.typography.display.family} · {brandDna.visual.typography.display.weight}</code></article>
+              <article className="type-headings"><span>Headings</span><p>Make the point visible.</p><code>{brandDna.visual.typography.headings.family} · {brandDna.visual.typography.headings.weight}</code></article>
               <article className="type-body"><span>Body</span><p>Use body type for sustained reading, instructions, and supporting detail.</p><code>{brandDna.visual.typography.body.family} · {brandDna.visual.typography.body.weight}</code></article>
               <article className="type-utility"><span>Utility</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>{brandDna.visual.typography.utility.family} · {brandDna.visual.typography.utility.weight}</code></article>
-            </div>
-            <div className="type-scale" aria-label="Type scale">
-              <div><code>Display / 76</code><b>Brand systems</b></div>
-              <div><code>Heading / 32</code><b>Built to be used</b></div>
-              <div><code>Body / 16</code><span>Clear information at a comfortable reading size.</span></div>
-              <div><code>Label / 10</code><span>SECTION LABEL</span></div>
             </div>
           </Chapter>
         </div>
@@ -735,100 +852,107 @@ export default function Home() {
                   { stop: brandDna.visual.semanticColors.ink.stop, label: "Ink" },
                 ] : undefined}
               />)}
-              <dl className="color-scale-formula">
-                <div><dt>Hue drift</dt><dd>{brandDna.visual.colorScale.hueMultiplier.toFixed(2)}×{brandDna.visual.colorScale.hueFlip ? " · Flipped" : ""}</dd></div>
-                <div><dt>Saturation drift</dt><dd>{brandDna.visual.colorScale.saturationMultiplier.toFixed(2)}×{brandDna.visual.colorScale.saturationFlip ? " · Flipped" : ""}</dd></div>
-                <div><dt>Scale contrast</dt><dd>{brandDna.visual.colorScale.contrast.toFixed(2)}×</dd></div>
-              </dl>
             </section>
-            <div className="color-pairs">
-              {contrastColors.map(({ base, contrast }) => <article
-                className="pair-auto"
-                key={base.name}
-                style={{ backgroundColor: base.value, color: contrast.value }}
-              >
-                <span>Aa</span>
-                <div><b>{base.name} / Contrast</b><p>{contrast.value} · Stop {contrast.stop} · {contrast.ratio.toFixed(2)}:1</p></div>
-              </article>)}
-            </div>
             <p className="inline-rule"><b>Rule:</b> Never use color as the only carrier of meaning.</p>
           </Chapter>
         </div>
 
-        <div hidden={activeTab !== "layout"}>
-          <Chapter id="layout" eyebrow="05 / Structure" title="Layout" note="Build rhythm with columns, space, and alignment." className="layout-page">
-            <div className="grid-specimen" aria-label="Twelve-column grid demonstration">
-              {Array.from({ length: 12 }, (_, index) => <i key={index} />)}
-              <strong>12</strong><span>columns</span>
+        <div hidden={activeTab !== "borders"}>
+          <Chapter id="borders" eyebrow="05 / Edge system" title="Borders" note="Define edge thickness and corner behavior." className="borders-page">
+            <div
+              className="border-system"
+              style={{
+                "--border-thickness": "var(--content-border-width)",
+                "--outer-radius": "var(--content-radius)",
+                "--inner-radius": `max(0px, calc(var(--content-radius) - ${borderDemoPadding}px))`,
+                "--border-padding": `${borderDemoPadding}px`,
+                "--button-radius": "var(--content-button-radius)",
+              } as CSSProperties}
+            >
+              <article className="border-card">
+                <div className="border-card-visual"><span>Inner radius</span><strong>R−P</strong></div>
+                <div className="border-card-copy"><p className="field-label">Concentric by default</p><h2>One edge logic.</h2><p>Inner radius equals outer radius minus the space between both edges.</p><span className="border-demo-button">Button</span></div>
+              </article>
+              <dl className="border-values">
+                <div><dt>Border thickness</dt><dd>{borderThicknessName}</dd><p>Sets the visual weight of lines and dividers.</p></div>
+                <div><dt>Corner radius</dt><dd>{borderRadius}rem</dd><p>Dial the corner character continuously from sharp to soft.</p></div>
+                <div><dt>Button pill</dt><dd>{brandDna.visual.borders.buttonPill ? "On" : "Off"}</dd><p>Buttons are {brandDna.visual.borders.buttonPill ? "fully rounded" : "shaped by the selected corner radius"}.</p></div>
+              </dl>
             </div>
-            <div className="layout-details">
-              <article className="spacing-block"><p className="field-label">Spacing scale</p>{Object.entries(brandDna.visual.spacing).map(([name, value]) => <div key={name}><i style={{ width: value }} /><code>{name} / {value}</code></div>)}</article>
-              <article className="composition-demo"><p className="field-label">Composition</p><div><span /><span /><span /></div><p>Align to the grid. Change scale before adding decoration.</p></article>
-              <article className="shape-block"><p className="field-label">Shape</p><div><i style={{ borderRadius: brandDna.visual.radii.small }} /><i style={{ borderRadius: brandDna.visual.radii.medium }} /><i style={{ borderRadius: brandDna.visual.radii.full }} /></div><p>Use radius only when it clarifies grouping or interaction.</p></article>
+          </Chapter>
+        </div>
+
+        <div hidden={activeTab !== "shadows"}>
+          <Chapter id="shadows" eyebrow="06 / Depth system" title="Shadows" note="Use depth deliberately, from a quiet lift to strong separation." className="shadows-page">
+            <div className="shadow-cards" role="region" aria-label="Shadow scale">
+              {(["sm", "md", "lg"] as const).map((size) => {
+                const token = getDerivedShadow(brandDna.visual.shadows.base, brandDna.visual.shadows.multiplier, size);
+                const label = size.toUpperCase();
+                return <SpecimenCard
+                  className="shadow-card"
+                  key={size}
+                  name={`Shadow ${label}`}
+                  value={`Signal ${token.colorStop}`}
+                  description={`${token.distance}px distance · ${token.angle}° angle · ${token.blur}px blur · ${token.spread}px spread · ${Math.round(token.opacity * 100)}% opacity`}
+                >
+                  <div className="shadow-sample" style={{ boxShadow: getShadowCss(token, signal.value, brandDna.visual.colorScale) }}>
+                    <span>{label}</span><strong>Aa</strong>
+                  </div>
+                </SpecimenCard>;
+              })}
             </div>
           </Chapter>
         </div>
 
         <div hidden={activeTab !== "imagery"}>
-          <Chapter id="imagery" eyebrow="06 / Art direction" title="Imagery" note={brandDna.imagery.principle} className="imagery-page">
-            <div className="image-gallery">
-              {brandDna.imagery.directions.map((direction, index) => (
-                <figure className={`image-placeholder image-${index + 1}`} key={direction.name}>
-                  <div className="crop-marks"><span /><span /><span /><span /></div>
-                  <div className="image-art" aria-hidden="true"><i /><i /><i /></div>
-                  <figcaption><b>{direction.name}</b><span>{direction.description}</span></figcaption>
-                </figure>
-              ))}
+          <Chapter id="imagery" eyebrow="07 / Art direction" title="Imagery" note={brandDna.imagery.principle} className="imagery-page">
+            <div className="imagery-references">
+              {brandDna.imagery.directions.map((direction) => <section className="imagery-reference" key={direction.asset}>
+                <SpecimenCard className="imagery-card" name={direction.name} value={direction.asset} description={direction.description}>
+                  <img src={`/brand-dna/brand/imagery/${direction.asset}`} alt={`${direction.name} visual reference`} />
+                </SpecimenCard>
+                <div className="imagery-prompt">
+                  <p className="field-label">Generation prompt</p>
+                  <p>{direction.prompt}</p>
+                </div>
+              </section>)}
             </div>
-            <div className="do-dont"><div><b>DO</b><p>{brandDna.imagery.do}</p></div><div><b>AVOID</b><p>{brandDna.imagery.avoid}</p></div></div>
           </Chapter>
         </div>
 
         <div hidden={activeTab !== "iconography"}>
-          <Chapter id="iconography" eyebrow="07 / Symbol system" title="Iconography" note={brandDna.iconography.principle} className="icon-page">
+          <Chapter id="iconography" eyebrow="08 / Icon source" title="Iconography" note={initialBrandDna.iconography.principle} className="icon-page">
+            <div className="icon-source-summary">
+              <p className="field-label">Current source</p>
+              <b>{initialBrandDna.iconography.library}</b>
+              <span>{initialBrandDna.iconography.variant}</span>
+              <a href={initialBrandDna.iconography.source} target="_blank" rel="noreferrer">Browse library ↗</a>
+            </div>
             <div className="icon-grid">
-              <LineIcon name="Create"><path d="M24 8v32M8 24h32" /></LineIcon>
-              <LineIcon name="Move"><path d="M8 24h30M28 14l10 10-10 10" /></LineIcon>
-              <LineIcon name="Save"><path d="M12 8h20l4 4v28H12zM18 8v12h12V8M18 32h12" /></LineIcon>
-              <LineIcon name="View"><path d="M5 24s7-11 19-11 19 11 19 11-7 11-19 11S5 24 5 24z" /><circle cx="24" cy="24" r="5" /></LineIcon>
-              <LineIcon name="Connect"><circle cx="12" cy="24" r="5" /><circle cx="36" cy="12" r="5" /><circle cx="36" cy="36" r="5" /><path d="m17 22 14-8M17 26l14 8" /></LineIcon>
-              <LineIcon name="Confirm"><circle cx="24" cy="24" r="18" /><path d="m15 24 6 6 13-14" /></LineIcon>
+              <LibraryIcon name="Create" icon={Plus} />
+              <LibraryIcon name="Move" icon={ArrowRight} />
+              <LibraryIcon name="Save" icon={Save} />
+              <LibraryIcon name="View" icon={Eye} />
+              <LibraryIcon name="Connect" icon={Share2} />
+              <LibraryIcon name="Confirm" icon={CircleCheck} />
             </div>
-            <div className="icon-rules">
-              <div><p className="field-label">Grid</p><b>{brandDna.iconography.grid}</b><span>Design on a consistent optical field.</span></div>
-              <div><p className="field-label">Stroke</p><b>{brandDna.iconography.stroke}</b><span>Keep weight consistent at the base size.</span></div>
-              <div><p className="field-label">Corners</p><b>{brandDna.iconography.corners}</b><span>Use one corner logic across the set.</span></div>
-              <div><p className="field-label">Style</p><b>{brandDna.iconography.style}</b><span>Use fill only for selected states.</span></div>
-            </div>
-          </Chapter>
-        </div>
-
-        <div hidden={activeTab !== "motion"}>
-          <Chapter id="motion" eyebrow="08 / Behavior" title="Motion" note="Explain change. Show cause and effect." className="motion-page">
-            <div className="motion-stage">
-              <div className="motion-orbit"><i /><span>Enter with direction.<br />Remain at rest.</span></div>
-              <div><p className="field-label">Core principle</p><h2>{brandDna.motionAndSound.principle}</h2></div>
-            </div>
-            <div className="motion-tokens">
-              <article><span>Fast</span><b>{brandDna.motionAndSound.motion.fast}</b><i className="m-fast" /></article>
-              <article><span>Standard</span><b>{brandDna.motionAndSound.motion.standard}</b><i className="m-base" /></article>
-              <article><span>Expressive</span><b>{brandDna.motionAndSound.motion.expressive}</b><i className="m-slow" /></article>
-              <article><span>Easing</span><b>{brandDna.motionAndSound.motion.easing}</b><i className="m-curve" /></article>
-            </div>
-            <p className="inline-rule"><b>Rule:</b> Respect reduced-motion preferences. Ambient motion is optional.</p>
           </Chapter>
         </div>
 
         <div hidden={activeTab !== "voice"}>
-          <Chapter id="voice" eyebrow="09 / Language" title="Voice & Tone" note="Say what matters. Adapt the energy, not the point of view." className="voice-page">
-            <div className="voice-lead"><p className="field-label">Voice in one sentence</p><blockquote>“{brandDna.voice.intent}”</blockquote></div>
-            <div className="voice-rules">{brandDna.voice.rules.map((rule, index) => <article key={rule}><span>0{index + 1}</span><h2>{rule}</h2></article>)}</div>
-            <div className="tone-table" role="table" aria-label="Tone by context">
-              <div role="row"><b role="cell">Guide</b><span role="cell">Clear + calm</span><p role="cell">“Start here. You can review it later.”</p></div>
-              <div role="row"><b role="cell">Celebrate</b><span role="cell">Warm + brief</span><p role="cell">“All set. Your next step is ready.”</p></div>
-              <div role="row"><b role="cell">Correct</b><span role="cell">Direct + useful</span><p role="cell">“This field needs a future date.”</p></div>
+          <Chapter id="voice" eyebrow="09 / Language" title="Voice & Tone" note="Five dimensions define how the brand sounds." className="voice-page">
+            <div className="voice-spectrum" aria-label="Voice dimensions">
+              {brandDna.voice.dimensions.map((dimension) => <div className="voice-spectrum-row" key={dimension.name}>
+                <span>{dimension.left}</span>
+                <div className="voice-spectrum-track" aria-hidden="true"><i style={{ left: `${dimension.value}%` }} /></div>
+                <span>{dimension.right}</span>
+                <small>{dimension.name}</small>
+              </div>)}
             </div>
-            <div className="word-bank"><div><b>USE</b><p>{brandDna.voice.preferredVocabulary.join(" · ")}</p></div><div><b>AVOID</b><p>{brandDna.voice.avoidVocabulary.join(" · ")}</p></div></div>
+            <div className="voice-language">
+              <article><span>Say</span><p>{brandDna.voice.say}</p></article>
+              <article><span>Don’t say</span><p>{brandDna.voice.dontSay}</p></article>
+            </div>
           </Chapter>
         </div>
 
@@ -850,18 +974,16 @@ export default function Home() {
         <footer>
           <div className="footer-mark"><span>DNA</span><i /></div>
           <p>Practical brand guidelines for people and agents.</p>
-          <button type="button" onClick={() => selectTab("principles")}>Principles <span aria-hidden="true">↑</span></button>
+          <button type="button" onClick={() => selectTab("about")}>About <span aria-hidden="true">↑</span></button>
         </footer>
       </div>
       {isEditing && <EditorPanel
         section={activeTab}
         draft={draft}
-        directions={directions}
         changeCount={changes.length}
         comparing={comparing}
         status={status}
         onChange={updateDraft}
-        onDirections={(next) => { setDirections(next); setStatus(""); }}
         onCompare={() => setComparing((current) => !current)}
         onCopy={copyPrompt}
         onDownload={downloadChanges}

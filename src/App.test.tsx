@@ -5,14 +5,14 @@ import App from "./App";
 import { draftStorageKey } from "./editor";
 
 const chapterNames = [
-  "Principles",
+  "About",
   "Logo",
   "Typography",
   "Color",
-  "Layout",
+  "Borders",
+  "Shadows",
   "Imagery",
   "Iconography",
-  "Motion",
   "Voice & Tone",
   "Applications",
 ];
@@ -34,6 +34,7 @@ describe("Brand DNA site", () => {
 
     expect(screen.queryByRole("tab", { name: /AI contract/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /Build yours/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /Motion/i })).not.toBeInTheDocument();
   });
 
   it("groups the palette into Brand, Utility, and Semantic rows", async () => {
@@ -41,20 +42,169 @@ describe("Brand DNA site", () => {
     render(<App />);
 
     await user.click(screen.getByRole("tab", { name: /Color/ }));
-    expect(within(screen.getByRole("region", { name: "Brand" })).getAllByRole("article").map((item) => item.querySelector("b")?.textContent)).toEqual(["Signal", "Accent"]);
+    const brandCards = within(screen.getByRole("region", { name: "Brand" })).getAllByRole("article");
+    expect(brandCards.map((item) => item.querySelector("b")?.textContent)).toEqual(["Signal", "Accent"]);
+    expect(brandCards.every((item) => item.classList.contains("specimen-card") && item.querySelector(".specimen-card-caption"))).toBe(true);
     expect(within(screen.getByRole("region", { name: "Utility" })).getAllByRole("article").map((item) => item.querySelector("b")?.textContent)).toEqual(["Ink", "Paper", "Border"]);
     expect(within(screen.getByRole("region", { name: "Semantic" })).getAllByRole("article").map((item) => item.querySelector("b")?.textContent)).toEqual(["Success", "Warning", "Error"]);
+    expect(document.querySelector(".color-scale-formula")).not.toBeInTheDocument();
+    expect(document.querySelector(".color-pairs")).not.toBeInTheDocument();
+  });
+
+  it("documents the minimum logo asset set without Logo editor controls", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Logo/ }));
+    expect(screen.getByText("public/brand/logo/")).toBeInTheDocument();
+    const assetSet = screen.getByRole("region", { name: "Minimum logo asset set" });
+    const variants = within(assetSet).getAllByRole("article");
+    expect(variants).toHaveLength(5);
+    expect(variants.every((item) => item.classList.contains("specimen-card") && item.querySelector(".specimen-card-caption"))).toBe(true);
+    for (const variant of ["Primary logo", "Icon", "Wordmark", "Black", "White"]) {
+      expect(within(assetSet).getByText(variant)).toBeInTheDocument();
+    }
+    expect(within(assetSet).queryByText(/Small-use/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const editor = screen.getByRole("complementary", { name: "Brand editor" });
+    expect(editor.querySelector(".editor-controls")).not.toBeInTheDocument();
+    expect(within(editor).queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("presents imagery as reusable reference cards with editable text prompts", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Imagery/ }));
+    const references = document.querySelectorAll(".imagery-reference");
+    expect(references).toHaveLength(2);
+    expect(document.querySelectorAll(".imagery-card.specimen-card")).toHaveLength(2);
+    expect(screen.getAllByText("Generation prompt")).toHaveLength(2);
+    expect(screen.getByRole("img", { name: "Focused Work visual reference" })).toHaveAttribute("src", "/brand-dna/brand/imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png");
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByText("public/brand/imagery/")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Title")).toHaveLength(2);
+    expect(screen.getAllByLabelText("Description")).toHaveLength(2);
+    expect(screen.getAllByLabelText("Prompt")).toHaveLength(2);
+    await user.clear(screen.getAllByLabelText("Title")[0]);
+    await user.type(screen.getAllByLabelText("Title")[0], "People in motion");
+    expect(screen.getByText("People in motion", { selector: ".specimen-card-meta b" })).toBeInTheDocument();
+  });
+
+  it("uses a real icon library and keeps iconography editing source-based", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Iconography/ }));
+    expect(screen.getByText("Lucide", { selector: ".icon-source-summary b" })).toBeInTheDocument();
+    expect(document.querySelectorAll(".icon-card svg")).toHaveLength(6);
+    for (const label of ["Create", "Move", "Save", "View", "Connect", "Confirm"]) {
+      expect(screen.getByText(label, { selector: "figcaption" })).toBeInTheDocument();
+    }
+    expect(screen.queryByText("24 × 24")).not.toBeInTheDocument();
+    expect(screen.queryByText("1.5 px")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const libraries = within(screen.getByRole("radiogroup", { name: "Icon library" }));
+    expect(libraries.getAllByRole("radio")).toHaveLength(5);
+    expect(libraries.getByRole("radio", { name: "Lucide" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("link", { name: "Visit Phosphor" })).toHaveAttribute("href", "https://phosphoricons.com/");
+
+    await user.click(libraries.getByRole("radio", { name: "Phosphor" }));
+    expect(screen.getByRole("combobox", { name: "Icon library variant" })).toHaveValue("Thin");
+    expect(screen.getByRole("option", { name: "Duotone" })).toBeInTheDocument();
+    expect(screen.getByText("Lucide", { selector: ".icon-source-summary b" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Grid")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Stroke")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Corners")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Style")).not.toBeInTheDocument();
+  });
+
+  it("keeps Borders to semantic thickness, a rem radius dial, and button-pill decisions", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Borders/ }));
+    expect(screen.getByRole("heading", { name: "Borders" })).toBeInTheDocument();
+    expect(screen.getByText("Concentric by default")).toBeInTheDocument();
+    expect(screen.getByText("Dial the corner character continuously from sharp to soft.")).toBeInTheDocument();
+    expect(document.querySelector(".border-values")?.textContent).not.toContain("px");
+    expect(screen.queryByText("Spacing scale")).not.toBeInTheDocument();
+    expect(screen.queryByText("Composition")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Twelve-column grid demonstration")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    const thickness = within(screen.getByRole("group", { name: "Border thickness" }));
+    const radius = screen.getByRole("slider", { name: "Corner radius" });
+    const pill = within(screen.getByRole("group", { name: "Button pill" }));
+    expect(thickness.getByRole("button", { name: "thin" })).toHaveAttribute("aria-pressed", "true");
+    expect(radius).toHaveValue("0");
+    expect(radius).toHaveAttribute("min", "0");
+    expect(radius).toHaveAttribute("max", "3");
+    expect(radius).toHaveAttribute("step", "0.1");
+    expect(pill.getByRole("button", { name: "off" })).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelector("main")).toHaveStyle({
+      "--content-radius": "0rem",
+      "--content-button-radius": "0rem",
+    });
+
+    fireEvent.input(radius, { target: { value: "2.2" } });
+    expect(radius).toHaveValue("2.2");
+    expect(screen.getByText("2.2rem", { selector: ".border-values dd" })).toBeInTheDocument();
+    await user.click(pill.getByRole("button", { name: "on" }));
+    expect(screen.getByText("Buttons are fully rounded.")).toBeInTheDocument();
+    expect(document.querySelector("main")).toHaveStyle({
+      "--content-border-width": "1px",
+      "--content-radius": "2.2rem",
+      "--content-button-radius": "999px",
+    });
+  });
+
+  it("defines three editable shadow tokens using Signal palette stops", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Shadows/ }));
+    const scale = screen.getByRole("region", { name: "Shadow scale" });
+    expect(within(scale).getAllByRole("article")).toHaveLength(3);
+    for (const name of ["Shadow SM", "Shadow MD", "Shadow LG"]) {
+      expect(within(scale).getByText(name)).toBeInTheDocument();
+    }
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getAllByRole("slider")).toHaveLength(6);
+    expect(screen.getAllByRole("combobox")).toHaveLength(1);
+    const distance = screen.getByRole("slider", { name: "Distance" });
+    expect(distance).toHaveValue("16");
+    fireEvent.input(distance, { target: { value: "12" } });
+    expect(distance).toHaveValue("12");
+    expect(within(scale).getByText(/7.1px distance/)).toBeInTheDocument();
+    expect(within(scale).getByText(/20.4px distance/)).toBeInTheDocument();
+
+    fireEvent.input(screen.getByRole("slider", { name: "Scale multiplier" }), { target: { value: "3" } });
+    expect(within(scale).getByText(/4px distance/)).toBeInTheDocument();
+    expect(within(scale).getByText(/36px distance/)).toBeInTheDocument();
+
+    const opacity = screen.getByRole("slider", { name: "Opacity" });
+    expect(opacity).toHaveValue("84");
+    fireEvent.input(opacity, { target: { value: "35" } });
+    expect(within(scale).getAllByText(/35% opacity/)).toHaveLength(3);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Color stop" }), "750");
+    expect(within(scale).getAllByText("Signal 750")).toHaveLength(3);
   });
 
   it("supports tab clicks and vertical or horizontal arrow-key navigation", async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const principles = screen.getByRole("tab", { name: /Principles/ });
+    const about = screen.getByRole("tab", { name: /About/ });
     const logo = screen.getByRole("tab", { name: /Logo/ });
     const applications = screen.getByRole("tab", { name: /Applications/ });
 
-    principles.focus();
+    about.focus();
     await user.keyboard("{ArrowDown}");
     expect(logo).toHaveFocus();
     expect(logo).toHaveAttribute("aria-selected", "true");
@@ -83,6 +233,26 @@ describe("Brand DNA site", () => {
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#content");
   });
 
+  it("redirects the legacy Layout hash to Borders", async () => {
+    window.location.hash = "#layout";
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /Borders/ })).toHaveAttribute("aria-selected", "true");
+    });
+    expect(window.location.hash).toBe("#borders");
+  });
+
+  it("redirects the retired Motion hash to Voice & Tone", async () => {
+    window.location.hash = "#motion";
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /Voice & Tone/ })).toHaveAttribute("aria-selected", "true");
+    });
+    expect(window.location.hash).toBe("#voice");
+  });
+
   it("opens a contextual editor and previews exact draft changes", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -100,25 +270,47 @@ describe("Brand DNA site", () => {
     expect(screen.getByLabelText("Signal: 10 light tones, base color at 500, and 10 dark tones").children).toHaveLength(21);
 
     await user.click(screen.getByRole("button", { name: "Compare original" }));
-    expect(document.querySelector("main")).toHaveStyle({ "--signal": "#FF5C35" });
+    expect(document.querySelector("main")).toHaveStyle({ "--signal": "#FFCA0D" });
     expect(screen.getByRole("button", { name: "Show draft" })).toBeInTheDocument();
   });
 
-  it("keeps global direction fields only in Principles and uses concise action labels", async () => {
+  it("uses About as a two-field introduction and removes the direction questionnaire", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    expect(screen.getByRole("heading", { name: "Direction" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Should feel like")).toBeInTheDocument();
+    expect(screen.getByLabelText("Brand name")).toHaveValue("bananas");
+    expect(screen.getByLabelText("Purpose")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Direction" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Should feel like")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Should not feel like")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Compare original" })).toHaveTextContent("Compare");
     expect(screen.getByRole("button", { name: "Copy update prompt" })).toHaveTextContent("Copy");
     expect(screen.getByRole("button", { name: "Download changes" })).toHaveTextContent("Download");
     expect(screen.getByRole("button", { name: "Reset draft" })).toHaveTextContent("Reset");
 
-    await user.click(screen.getByRole("tab", { name: /Typography/ }));
-    expect(screen.queryByRole("heading", { name: "Direction" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Should feel like")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Brand name"), { target: { value: "New name" } });
+    expect(screen.getByText("New name", { selector: ".about-statement h2" })).toBeInTheDocument();
+  });
+
+  it("edits and previews five voice dimensions plus Say and Don’t say", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("tab", { name: /Voice & Tone/ }));
+
+    const sliders = screen.getAllByRole("slider");
+    expect(sliders).toHaveLength(5);
+    expect(screen.getByRole("slider", { name: "Literal to Playful" })).toHaveValue("75");
+    expect(screen.getByLabelText("Say")).toBeInTheDocument();
+    expect(screen.getByLabelText("Don’t say")).toBeInTheDocument();
+    expect([...screen.getByLabelText("Voice dimensions").querySelectorAll(".voice-spectrum-row > span")].map((item) => item.textContent)).toEqual([
+      "Literal", "Playful", "Casual", "Formal", "Warm", "Reserved", "Bold", "Subtle", "Concise", "Expressive",
+    ]);
+
+    fireEvent.input(screen.getByRole("slider", { name: "Literal to Playful" }), { target: { value: "70" } });
+    expect(document.querySelector(".voice-spectrum-track i")).toHaveStyle({ left: "70%" });
   });
 
   it("uses three Google Fonts links without application-level spacing controls", async () => {
@@ -130,23 +322,28 @@ describe("Brand DNA site", () => {
 
     expect(screen.getByRole("link", { name: /Open Google Fonts/ })).toHaveAttribute("href", "https://fonts.google.com/");
     expect(screen.getByRole("link", { name: /Open Google Fonts/ })).toHaveAttribute("target", "_blank");
-    expect(screen.getByLabelText("Display font link")).toHaveAttribute("placeholder", "Paste a Google Fonts link");
+    expect(screen.getByLabelText("Headings font link")).toHaveAttribute("placeholder", "Paste a Google Fonts link");
     expect(screen.getByLabelText("Body font link")).toBeInTheDocument();
     expect(screen.getByLabelText("Utility font link")).toBeInTheDocument();
-    expect(screen.queryByRole("slider", { name: "Display tracking" })).not.toBeInTheDocument();
+    expect(screen.getByText("Headings", { selector: ".type-headings > span" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Type scale")).not.toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Headings tracking" })).not.toBeInTheDocument();
     expect(screen.queryByRole("slider", { name: "Body line height" })).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Display font link"), {
+    fireEvent.change(screen.getByLabelText("Headings font link"), {
       target: { value: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@400;700&display=swap" },
     });
     expect(screen.getByText("DM Serif Display · 400")).toBeInTheDocument();
-    expect(await screen.findByRole("combobox", { name: "Display preferred weight" })).toHaveValue("400");
-    await waitFor(() => expect(screen.getByRole("combobox", { name: "Display preferred weight" })).toHaveTextContent("700"));
-    await user.selectOptions(screen.getByRole("combobox", { name: "Display preferred weight" }), "700");
+    const headingsWeight = await screen.findByRole("combobox", { name: "Headings preferred weight" });
+    expect(headingsWeight).toHaveValue("400");
+    await waitFor(() => expect(within(headingsWeight).getByRole("option", { name: "700" })).toBeInTheDocument());
+    await user.selectOptions(headingsWeight, "700");
     expect(screen.getByText("DM Serif Display · 700")).toBeInTheDocument();
-    await waitFor(() => expect(document.querySelector('link[data-brand-font="display"]')).toHaveAttribute(
+    await user.selectOptions(headingsWeight, "400");
+    expect(screen.getByText("DM Serif Display · 400")).toBeInTheDocument();
+    await waitFor(() => expect(document.querySelector('link[data-brand-font="headings"]')).toHaveAttribute(
       "href",
-      "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@700&display=swap",
+      "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@400&display=swap",
     ));
   });
 
@@ -157,34 +354,32 @@ describe("Brand DNA site", () => {
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.click(screen.getByRole("tab", { name: /Color/ }));
     expect(screen.getByRole("slider", { name: /Hue drift/ })).toHaveAttribute("max", "2");
-    expect(screen.getByRole("button", { name: "Flip hue drift" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Flip hue drift" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Flip hue drift" })).toHaveTextContent(/^Flip$/);
     expect(screen.getByRole("slider", { name: /Saturation drift/ })).toHaveAttribute("max", "2");
     expect(screen.getByRole("button", { name: "Flip saturation drift" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Flip saturation drift" })).toHaveTextContent(/^Flip$/);
     expect(screen.getByRole("slider", { name: "Scale contrast" })).toHaveAttribute("min", "0.5");
     expect(screen.queryByRole("slider", { name: "Semantic harmony" })).not.toBeInTheDocument();
-    expect(screen.getByText("10 light / 10 dark")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Paper / Background stop" })).toHaveValue("50");
-    expect(screen.getByRole("combobox", { name: "Ink / Foreground stop" })).toHaveValue("900");
-    expect(screen.getByRole("slider", { name: "Border opacity" })).toHaveValue("20");
+    expect(screen.getAllByText("10 light / 10 dark")).toHaveLength(5);
+    expect(screen.getByRole("combobox", { name: "Paper / Background stop" })).toHaveValue("100");
+    expect(screen.getByRole("combobox", { name: "Ink / Foreground stop" })).toHaveValue("950");
+    expect(screen.getByRole("slider", { name: "Border opacity" })).toHaveValue("43");
     expect(within(screen.getByRole("complementary", { name: "Brand editor" })).queryByText("Contrast")).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Base position" })).not.toBeInTheDocument();
 
     fireEvent.input(screen.getByRole("slider", { name: /Hue drift/ }), { target: { value: "1.2" } });
     expect(screen.getByRole("complementary", { name: "Brand editor" })).toHaveTextContent("1 change");
-    expect(screen.getByText("1.20×")).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /Hue drift/ })).toHaveValue("1.2");
 
     await user.click(screen.getByRole("button", { name: "Flip hue drift" }));
-    expect(screen.getByRole("button", { name: "Flip hue drift" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText(/1\.20× · Flipped/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Flip hue drift" })).toHaveAttribute("aria-pressed", "false");
 
     await user.click(screen.getByRole("button", { name: "Flip saturation drift" }));
     expect(screen.getByRole("button", { name: "Flip saturation drift" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText(/1\.10× · Flipped/)).toBeInTheDocument();
   });
 
-  it("keeps derived colors minimal until Adjusted is selected", async () => {
+  it("moves a custom color between Default and Adjusted modes", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -192,20 +387,23 @@ describe("Brand DNA site", () => {
     await user.click(screen.getByRole("tab", { name: /Color/ }));
 
     const accent = screen.getByRole("region", { name: "Accent color" });
-    expect(within(accent).getByRole("button", { name: "Default" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(accent).getByRole("button", { name: "Custom" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(accent).getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.04");
+    expect(within(accent).getByLabelText("Choose Accent color")).toHaveValue("#1b4af3");
+    await user.click(within(accent).getByRole("button", { name: "Default" }));
     expect(within(accent).queryByRole("slider", { name: "Accent hue drift" })).not.toBeInTheDocument();
     expect(within(accent).queryByLabelText("Choose Accent color")).not.toBeInTheDocument();
     await user.click(within(accent).getByRole("button", { name: "Adjusted" }));
 
     expect(within(accent).getByRole("button", { name: "Adjusted" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(accent).getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.1");
+    expect(within(accent).getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.11");
     expect(within(accent).queryByLabelText("Choose Accent color")).not.toBeInTheDocument();
     fireEvent.input(within(accent).getByRole("slider", { name: "Accent hue drift" }), { target: { value: "1.8" } });
     expect(within(accent).getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.8");
 
     await user.click(within(accent).getByRole("button", { name: "Default" }));
     expect(within(accent).queryByRole("slider", { name: "Accent hue drift" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Reset draft" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reset draft" })).toBeEnabled();
   });
 
   it("derives Paper and Ink from selectable Signal stops", async () => {
@@ -248,7 +446,7 @@ describe("Brand DNA site", () => {
     const main = document.querySelector("main")!;
     const originalBorder = getComputedStyle(main).getPropertyValue("--line");
 
-    expect(screen.getByText("20% Ink")).toBeInTheDocument();
+    expect(screen.getByText("43% Ink")).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Border mode" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Choose Border color")).not.toBeInTheDocument();
     fireEvent.input(screen.getByRole("slider", { name: "Border opacity" }), { target: { value: "35" } });
@@ -260,7 +458,7 @@ describe("Brand DNA site", () => {
     expect(screen.getByRole("slider", { name: "Border opacity" })).toHaveValue("35");
   });
 
-  it("defaults Accent and semantic states to Signal-derived modes with custom overrides", async () => {
+  it("loads the canonical custom and adjusted color modes with reversible overrides", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -270,25 +468,27 @@ describe("Brand DNA site", () => {
     expect(screen.getAllByRole("button", { name: "Default" })).toHaveLength(4);
     expect(screen.getAllByRole("button", { name: "Adjusted" })).toHaveLength(4);
     expect(screen.getAllByRole("button", { name: "Custom" })).toHaveLength(4);
-    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#35D8FF", "--success": "#51ED26", "--warning": "#EFB539", "--error": "#ED2B26" });
-    expect(screen.queryByLabelText("Choose Accent color")).not.toBeInTheDocument();
+    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#1B4AF3", "--success": "#3DED1F", "--warning": "#ED8026", "--error": "#B82350" });
+    expect(screen.getByLabelText("Choose Accent color")).toHaveValue("#1b4af3");
     expect(screen.queryByLabelText("Choose Success color")).not.toBeInTheDocument();
 
+    await user.click(within(screen.getByRole("group", { name: "Accent mode" })).getByRole("button", { name: "Default" }));
+    expect(screen.queryByLabelText("Choose Accent color")).not.toBeInTheDocument();
+    expect(document.querySelector("main")).not.toHaveStyle({ "--accent": "#1B4AF3" });
     await user.click(within(screen.getByRole("group", { name: "Accent mode" })).getByRole("button", { name: "Custom" }));
-    expect(screen.getByLabelText("Choose Accent color")).toHaveValue("#6657ff");
-    expect(screen.getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.1");
-    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#6657FF" });
+    expect(screen.getByLabelText("Choose Accent color")).toHaveValue("#1b4af3");
+    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#1B4AF3" });
 
     fireEvent.input(screen.getByRole("slider", { name: "Accent hue drift" }), { target: { value: "1.7" } });
     expect(screen.getByRole("slider", { name: "Accent hue drift" })).toHaveValue("1.7");
-    expect(screen.getByLabelText("Choose Accent color")).toHaveValue("#6657ff");
+    expect(screen.getByLabelText("Choose Accent color")).toHaveValue("#1b4af3");
 
     fireEvent.change(screen.getByLabelText("Choose Signal color"), { target: { value: "#00aaff" } });
-    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#6657FF" });
-    expect(document.querySelector("main")).not.toHaveStyle({ "--success": "#51ED26" });
+    expect(document.querySelector("main")).toHaveStyle({ "--accent": "#1B4AF3" });
+    expect(document.querySelector("main")).not.toHaveStyle({ "--success": "#3DED1F" });
   });
 
-  it("derives Success, Warning, and Error without exposing harmony controls", async () => {
+  it("renders canonical semantic colors without exposing harmony controls", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -297,10 +497,10 @@ describe("Brand DNA site", () => {
 
     expect(screen.getByText("Success · Warning · Error")).toBeInTheDocument();
     expect(screen.queryByRole("slider", { name: "Semantic harmony" })).not.toBeInTheDocument();
-    expect(document.querySelector("main")).toHaveStyle({ "--success": "#51ED26", "--warning": "#EFB539", "--error": "#ED2B26" });
+    expect(document.querySelector("main")).toHaveStyle({ "--success": "#3DED1F", "--warning": "#ED8026", "--error": "#B82350" });
   });
 
-  it("shows an automatic Contrast endpoint for every base color", async () => {
+  it("keeps automatic Contrast endpoints in palette markers without the large examples", async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -308,12 +508,8 @@ describe("Brand DNA site", () => {
     await user.click(screen.getByRole("tab", { name: /Color/ }));
 
     expect(within(screen.getByRole("complementary", { name: "Brand editor" })).queryByText("Contrast", { exact: true })).not.toBeInTheDocument();
-    expect(screen.getByText("Signal / Contrast")).toBeInTheDocument();
-    expect(screen.getByText("Accent / Contrast")).toBeInTheDocument();
-    expect(screen.getByText("Success / Contrast")).toBeInTheDocument();
-    expect(screen.getByText("Warning / Contrast")).toBeInTheDocument();
-    expect(screen.getByText("Error / Contrast")).toBeInTheDocument();
-    expect(screen.getAllByText(/#[0-9A-F]{6} · Stop (0|1000) · \d+\.\d{2}:1/)).toHaveLength(5);
+    expect(document.querySelector(".color-pairs")).not.toBeInTheDocument();
+    expect(screen.queryByText("Signal / Contrast")).not.toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Scale contrast" })).toBeInTheDocument();
     const markers = screen.getAllByRole("button", { name: /Automatic contrast for/ });
     expect(markers).toHaveLength(5);

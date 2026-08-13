@@ -24,29 +24,42 @@ test("copies every public asset and emits self-hosted fonts", async () => {
     access(new URL("og.png", distRoot)),
     access(new URL("brand/brand-dna.json", distRoot)),
     access(new URL("brand/brand-dna.schema.json", distRoot)),
+    access(new URL("brand/logo/default.svg", distRoot)),
+    access(new URL("brand/logo/icon.svg", distRoot)),
+    access(new URL("brand/logo/wordmark.svg", distRoot)),
+    access(new URL("brand/logo/black.svg", distRoot)),
+    access(new URL("brand/logo/white.svg", distRoot)),
+    access(new URL("brand/imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png", distRoot)),
+    access(new URL("brand/imagery/70cea2c28ef2026ed23351237ec1316a199714b806711238ad59dd4de8073977.png", distRoot)),
   ]);
+  await assert.rejects(access(new URL("brand/logo/small-use.svg", distRoot)));
 
   const assetFiles = await readdir(new URL("assets/", distRoot));
   assert.ok(assetFiles.some((file) => file.endsWith(".woff2")), "expected self-hosted font assets");
 });
 
-test("keeps one canonical Brand DNA file and a minimal design-first builder intake", async () => {
-  const [sourceDna, builtDna, start, skill] = await Promise.all([
+test("keeps one canonical Brand DNA file and a browser-guided setup", async () => {
+  const [sourceDna, builtDna, start] = await Promise.all([
     readFile(new URL("public/brand/brand-dna.json", projectRoot), "utf8"),
     readFile(new URL("brand/brand-dna.json", distRoot), "utf8"),
     readFile(new URL("START-HERE.md", projectRoot), "utf8"),
-    readFile(new URL(".agents/skills/brand-dna-builder/SKILL.md", projectRoot), "utf8"),
   ]);
 
   assert.deepEqual(JSON.parse(builtDna), JSON.parse(sourceDna));
-  assert.match(start, /Use \$brand-dna-builder/);
-  assert.match(skill, /Inspect every useful file under `references\/`/);
-  assert.match(skill, /Ask at most these two short questions/);
-  assert.match(skill, /Do not run a fixed questionnaire/);
-  assert.doesNotMatch(skill, /What does the brand offer\?/);
-  assert.doesNotMatch(skill, /Which logo, name, colors/);
-  assert.match(skill, /web pages, presentations, BI dashboards, and social media cards\/posts/);
-  assert.equal((start.match(/^\d+\. /gm) ?? []).length, 2);
+  assert.match(start, /select \*\*Edit\*\*/);
+  assert.match(start, /no backend or setup questionnaire is required/);
+  await assert.rejects(access(new URL(".agents/skills/brand-dna-builder/SKILL.md", projectRoot)));
+  assert.equal(JSON.parse(sourceDna).meta.brandName, "bananas");
+  assert.equal(JSON.parse(sourceDna).essence.purpose, "Great taste, awesome design, and affordable. It's bananas!");
+  assert.equal("expressionPrinciples" in JSON.parse(sourceDna), false);
+  assert.deepEqual(JSON.parse(sourceDna).voice.dimensions.map(({ left, right }) => [left, right]), [
+    ["Literal", "Playful"],
+    ["Casual", "Formal"],
+    ["Warm", "Reserved"],
+    ["Bold", "Subtle"],
+    ["Concise", "Expressive"],
+  ]);
+  assert.ok(JSON.parse(sourceDna).voice.dimensions.every(({ description }) => description));
   assert.deepEqual(JSON.parse(sourceDna).channels.map(({ name }) => name), [
     "Web pages",
     "Presentations",
@@ -54,31 +67,55 @@ test("keeps one canonical Brand DNA file and a minimal design-first builder inta
     "Social media cards/posts",
   ]);
   assert.deepEqual(JSON.parse(sourceDna).visual.colors, [
-    { name: "Signal", value: "#FF5C35", mode: "source", role: "Emphasis and action" },
-    { name: "Accent", value: "#6657FF", mode: "complementary", role: "Expressive highlight and secondary emphasis" },
+    { name: "Signal", value: "#FFCA0D", mode: "source", role: "Emphasis and action" },
+    { name: "Accent", value: "#1B4AF3", mode: "custom", role: "Expressive highlight and secondary emphasis" },
     { name: "Success", value: "#2E9B58", mode: "derived", role: "Positive states, confirmation, and completed actions" },
-    { name: "Warning", value: "#D99A16", mode: "derived", role: "Caution, attention, and pending conditions" },
-    { name: "Error", value: "#D94332", mode: "derived", role: "Errors, destructive actions, and critical states" },
+    { name: "Warning", value: "#ED8026", mode: "custom", role: "Caution, attention, and pending conditions" },
+    { name: "Error", value: "#B82350", mode: "custom", role: "Errors, destructive actions, and critical states" },
   ]);
   assert.deepEqual(JSON.parse(sourceDna).visual.semanticColors, {
-    paper: { source: "Signal", stop: 50, role: "Background: primary canvas and light surfaces" },
-    ink: { source: "Signal", stop: 900, role: "Foreground: primary text, marks, and dark surfaces" },
-    border: { source: "Ink", mode: "ink-alpha", opacity: 0.2, value: "#182126", role: "Borders, dividers, and structural lines" },
+    paper: { source: "Signal", stop: 100, role: "Background: primary canvas and light surfaces" },
+    ink: { source: "Signal", stop: 950, role: "Foreground: primary text, marks, and dark surfaces" },
+    border: { source: "Ink", mode: "ink-alpha", opacity: 0.43, value: "#182126", role: "Borders, dividers, and structural lines" },
   });
-  assert.equal(JSON.parse(sourceDna).visual.colorScale.hueFlip, false);
+  assert.equal(JSON.parse(sourceDna).visual.colorScale.hueFlip, true);
   assert.equal(JSON.parse(sourceDna).visual.colorScale.saturationFlip, false);
   assert.equal(JSON.parse(sourceDna).visual.colorScale.contrastColorMode, "highest-contrast-endpoint");
   assert.deepEqual(JSON.parse(sourceDna).visual.colorScales, {
-    Accent: { mode: "linked" },
-    Success: { mode: "linked" },
-    Warning: { mode: "linked" },
-    Error: { mode: "linked" },
+    Accent: { mode: "custom", settings: { lightSteps: 10, darkSteps: 10, hueMultiplier: 1.04, hueFlip: false, saturationMultiplier: 1.2, saturationFlip: false, contrastColorMode: "highest-contrast-endpoint", contrast: 1.05 } },
+    Success: { mode: "custom", settings: { lightSteps: 10, darkSteps: 10, hueMultiplier: 1.29, hueFlip: false, saturationMultiplier: 1.2, saturationFlip: false, contrastColorMode: "highest-contrast-endpoint", contrast: 1.05 } },
+    Warning: { mode: "custom", settings: { lightSteps: 10, darkSteps: 10, hueMultiplier: 1.17, hueFlip: true, saturationMultiplier: 1, saturationFlip: false, contrastColorMode: "highest-contrast-endpoint", contrast: 0.9 } },
+    Error: { mode: "custom", settings: { lightSteps: 10, darkSteps: 10, hueMultiplier: 1.22, hueFlip: true, saturationMultiplier: 1.05, saturationFlip: false, contrastColorMode: "highest-contrast-endpoint", contrast: 0.95 } },
   });
   assert.deepEqual(JSON.parse(sourceDna).visual.typography, {
-    display: { family: "Georgia", source: "", weight: 400 },
-    body: { family: "Geist Sans", source: "", weight: 400 },
-    utility: { family: "Geist Mono", source: "", weight: 500 },
+    headings: {
+      family: "Sedgwick Ave Display",
+      source: "https://fonts.google.com/specimen/Sedgwick+Ave+Display?preview.layout=grid&categoryFilters=Feeling:%2FExpressive%2FArtistic&preview.script=Latn",
+      weight: 400,
+    },
+    body: { family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400 },
+    utility: { family: "Space Mono", source: "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", weight: 400 },
   });
+  assert.deepEqual(JSON.parse(sourceDna).visual.borders, { thickness: "thin", radius: 0, buttonPill: false });
+  assert.deepEqual(JSON.parse(sourceDna).visual.shadows, {
+    base: { distance: 16, angle: 90, blur: 13, spread: -5, colorStop: 650, opacity: 0.84 },
+    multiplier: 1.7,
+  });
+  assert.deepEqual(JSON.parse(sourceDna).iconography, {
+    principle: "Bring your own icons. Choose one source and use it consistently.",
+    library: "Lucide",
+    variant: "Outline",
+    source: "https://lucide.dev/icons/",
+  });
+  assert.deepEqual(JSON.parse(sourceDna).imagery.directions.map(({ name, asset }) => ({ name, asset })), [
+    { name: "Focused Work", asset: "21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png" },
+    { name: "Deliberate Pause", asset: "70cea2c28ef2026ed23351237ec1316a199714b806711238ad59dd4de8073977.png" },
+  ]);
+  assert.ok(JSON.parse(sourceDna).imagery.directions.every(({ description, prompt }) => description && prompt));
+  assert.equal("motionAndSound" in JSON.parse(sourceDna), false);
+  assert.equal("spacing" in JSON.parse(sourceDna).visual, false);
+  assert.equal("radii" in JSON.parse(sourceDna).visual, false);
+  assert.equal("shadows" in JSON.parse(sourceDna).visual, true);
 });
 
 test("keeps the application shell independent from Brand DNA colors", async () => {
@@ -100,21 +137,24 @@ test("applies semantic colors only to the guideline content canvas", async () =>
   const css = await readFile(new URL("src/styles.css", projectRoot), "utf8");
 
   assert.match(css, /\.page \{[^}]*background: var\(--paper\);[^}]*color: var\(--ink\);/);
-  assert.match(css, /\.principle-lead[^\n]*var\(--line\)/);
+  assert.match(css, /\.about-statement[^\n]*var\(--line\)/);
 });
 
-test("uses single shared borders for contiguous content grids", async () => {
+test("uses discrete reusable specimen cards and shared borders where content remains contiguous", async () => {
   const css = await readFile(new URL("src/styles.css", projectRoot), "utf8");
 
-  assert.match(css, /\.swatches \{[^}]*gap: 1px;[^}]*padding: 1px;[^}]*background: var\(--line\);/);
-  assert.match(css, /\.swatches-brand \{ grid-template-columns: repeat\(2, 1fr\); \}/);
-  assert.match(css, /\.swatches-utility, \.swatches-semantic \{ grid-template-columns: repeat\(3, 1fr\); \}/);
-  assert.match(css, /\.swatch \{[^}]*background: #fff;/);
-  assert.doesNotMatch(css, /\.swatch \{[^}]*box-shadow/);
-  assert.match(css, /\.swatch-color \{[^}]*box-shadow: inset 0 -1px var\(--line\);/);
-  assert.match(css, /\.swatch-color \{[^}]*height: clamp\(90px, 12vw, 170px\);/);
-  assert.match(css, /\.color-scale-formula \{[^}]*gap: 1px;[^}]*padding: 1px;[^}]*background: var\(--line\);/);
-  assert.doesNotMatch(css, /\.color-scale-formula > div \{[^}]*box-shadow/);
+  assert.match(css, /\.swatches \{[^}]*grid-template-columns: repeat\(auto-fill, 280px\);[^}]*gap: 12px;[^}]*justify-content: start;/);
+  assert.doesNotMatch(css, /\.swatches-(?:brand|utility|semantic) \{[^}]*grid-template-columns/);
+  assert.match(css, /\.specimen-card \{[^}]*display: grid;[^}]*border: var\(--content-border-width\) solid var\(--line\);[^}]*border-radius: var\(--content-radius\);[^}]*background: #fff;/);
+  assert.match(css, /\.specimen-card-caption \{[^}]*min-height: 88px;[^}]*background: #fff;[^}]*color: var\(--ink\);[^}]*border-top: var\(--content-border-width\) solid var\(--line\);/);
+  assert.match(css, /\.swatch \{[^}]*width: 280px;[^}]*height: 238px;[^}]*grid-template-rows: 150px 88px;/);
+  assert.match(css, /\.logo-variant \{[^}]*grid-template-rows: minmax\(300px, 1fr\) 88px;/);
+  assert.match(css, /\.voice-spectrum-track i \{[^}]*background: var\(--signal\);/);
+  assert.match(css, /\.voice-language article:last-child \{[^}]*background: var\(--ink\);[^}]*color: var\(--paper\);/);
+  assert.doesNotMatch(css, /\.color-scale-formula/);
+  assert.doesNotMatch(css, /\.color-pairs/);
+  assert.doesNotMatch(css, /--content-radius-compact/);
+  assert.doesNotMatch(css, /border-radius: var\(--content-radius-compact\)/);
   assert.match(css, /\.editor-actions \{[^}]*grid-template-columns: repeat\(4, 1fr\);/);
   assert.match(css, /\.editor-derived-summary > i \{[^}]*width: 24px;[^}]*height: 24px;/);
   assert.match(css, /\.editor-semantic-harmony \{ margin-top: 0;/);

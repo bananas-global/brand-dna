@@ -2,121 +2,107 @@
   "$schema": "./brand-dna.schema.json",
   "meta": {
     "schemaVersion": "1.0",
-    "brandName": "[BRAND NAME]",
+    "brandName": "bananas",
     "language": "en-US",
     "status": "starter",
     "version": "0.1"
   },
   "essence": {
-    "centralIdea": "[A short truth that guides every choice.]",
-    "purpose": "[The concrete change the brand wants to enable.]",
-    "role": "[How it participates in people’s lives.]",
-    "tension": "[The cultural or human conflict it helps resolve.]",
-    "promise": "[The experience that should repeat at every touchpoint.]"
+    "purpose": "Great taste, awesome design, and affordable. It's bananas!"
+  },
+  "voice": {
+    "dimensions": [
+      { "name": "Playfulness", "left": "Literal", "right": "Playful", "value": 75, "description": "Sets how literally the brand speaks versus how freely it uses humor, wordplay, metaphor, and surprise." },
+      { "name": "Register", "left": "Casual", "right": "Formal", "value": 30, "description": "Sets the level of ceremony through vocabulary, sentence structure, contractions, and forms of address." },
+      { "name": "Temperament", "left": "Warm", "right": "Reserved", "value": 25, "description": "Sets how openly the brand expresses empathy and emotion versus maintaining deliberate distance." },
+      { "name": "Presence", "left": "Bold", "right": "Subtle", "value": 20, "description": "Sets how assertively the brand states its point versus letting context and restraint carry the message." },
+      { "name": "Expression", "left": "Concise", "right": "Expressive", "value": 35, "description": "Sets how tightly the brand communicates versus allowing more detail, rhythm, and verbal texture." }
+    ],
+    "say": "Honest and truthful",
+    "dontSay": "inflated claims, artificial urgency, and generic marketing superlatives."
+  },
+  "visual": {
+    "signatureRule": "The name is variable. Proportion is the rule.",
+    "colors": [
+      { "name": "Signal", "value": "#FFCA0D", "mode": "source", "role": "Emphasis and action" },
+      { "name": "Accent", "value": "#1B4AF3", "mode": "custom", "role": "Expressive highlight and secondary emphasis" },
+      { "name": "Success", "value": "#2E9B58", "mode": "derived", "role": "Positive states, confirmation, and completed actions" },
+      { "name": "Warning", "value": "#ED8026", "mode": "custom", "role": "Caution, attention, and pending conditions" },
+      { "name": "Error", "value": "#B82350", "mode": "custom", "role": "Errors, destructive actions, and critical states" }
+    ],
+    "semanticColors": {
+      "paper": { "source": "Signal", "stop": 100, "role": "Background: primary canvas and light surfaces" },
+      "ink": { "source": "Signal", "stop": 950, "role": "Foreground: primary text, marks, and dark surfaces" },
+      "border": { "source": "Ink", "mode": "ink-alpha", "opacity": 0.43, "value": "#182126", "role": "Borders, dividers, and structural lines" }
+    },
+    "colorScale": {
+      "lightSteps": 10,
+      "darkSteps": 10,
+      "hueMultiplier": 1.11,
+      "hueFlip": true,
+      "saturationMultiplier": 1.25,
+      "saturationFlip": false,
+      "contrastColorMode": "highest-contrast-endpoint",
+      "contrast": 1.05
+    },
+    "colorScales": {
+      "Accent": {
+        "mode": "custom",
+        "settings": { "lightSteps": 10, "darkSteps": 10, "hueMultiplier": 1.04, "hueFlip": false, "saturationMultiplier": 1.2, "saturationFlip": false, "contrastColorMode": "highest-contrast-endpoint", "contrast": 1.05 }
+      },
+      "Success": {
+        "mode": "custom",
+        "settings": { "lightSteps": 10, "darkSteps": 10, "hueMultiplier": 1.29, "hueFlip": false, "saturationMultiplier": 1.2, "saturationFlip": false, "contrastColorMode": "highest-contrast-endpoint", "contrast": 1.05 }
+      },
+      "Warning": {
+        "mode": "custom",
+        "settings": { "lightSteps": 10, "darkSteps": 10, "hueMultiplier": 1.17, "hueFlip": true, "saturationMultiplier": 1, "saturationFlip": false, "contrastColorMode": "highest-contrast-endpoint", "contrast": 0.9 }
+      },
+      "Error": {
+        "mode": "custom",
+        "settings": { "lightSteps": 10, "darkSteps": 10, "hueMultiplier": 1.22, "hueFlip": true, "saturationMultiplier": 1.05, "saturationFlip": false, "contrastColorMode": "highest-contrast-endpoint", "contrast": 0.95 }
+      }
+    },
+    "typography": {
+      "headings": { "family": "Sedgwick Ave Display", "source": "https://fonts.google.com/specimen/Sedgwick+Ave+Display?preview.layout=grid&categoryFilters=Feeling:%2FExpressive%2FArtistic&preview.script=Latn", "weight": 400 },
+      "body": { "family": "Inter", "source": "https://fonts.google.com/specimen/Inter", "weight": 400 },
+      "utility": { "family": "Space Mono", "source": "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", "weight": 400 }
+    },
+    "borders": { "thickness": "thin", "radius": 0, "buttonPill": false },
+    "shadows": {
+      "base": { "distance": 16, "angle": 90, "blur": 13, "spread": -5, "colorStop": 650, "opacity": 0.84 },
+      "multiplier": 1.7
+    }
   },
   "positioning": {
     "statement": "For [priority audience], we are the [category] that [distinct benefit], because [proof].",
     "primaryAudience": "[Who experiences the problem and chooses the solution.]",
     "influencingAudience": "[Who recommends, approves, or enables the decision.]"
   },
-  "expressionPrinciples": [
-    {
-      "name": "Clear, not simplistic.",
-      "intent": "Reduce effort without erasing nuance. Orient first, then go deeper.",
-      "approvedExample": "See what changes your decision first.",
-      "avoidExample": "Discover a revolutionary universe of possibilities."
-    },
-    {
-      "name": "Human, not casual.",
-      "intent": "Show attention without simulating intimacy. Speak to people, not segments.",
-      "approvedExample": "Here is what you can do next.",
-      "avoidExample": "Hey bestie, let’s crush it together!"
-    },
-    {
-      "name": "Vivid, not noisy.",
-      "intent": "Use contrast to create energy. Give one idea at a time room to breathe.",
-      "approvedExample": "One clear signal leads the composition.",
-      "avoidExample": "Every element competes for attention."
-    }
-  ],
-  "voice": {
-    "intent": "Say what matters with precision and leave a door open.",
-    "rules": [
-      "Start with the person’s need.",
-      "Prefer concrete verbs.",
-      "End with a possible next step."
-    ],
-    "preferredVocabulary": ["start", "compare", "understand", "choose", "move forward", "review"],
-    "avoidVocabulary": ["disruptive", "revolutionary", "leading", "unmissable", "360° solution"]
-  },
-  "visual": {
-    "signatureRule": "The name is variable. Proportion is the rule.",
-    "colors": [
-      { "name": "Signal", "value": "#FF5C35", "mode": "source", "role": "Emphasis and action" },
-      { "name": "Accent", "value": "#6657FF", "mode": "complementary", "role": "Expressive highlight and secondary emphasis" },
-      { "name": "Success", "value": "#2E9B58", "mode": "derived", "role": "Positive states, confirmation, and completed actions" },
-      { "name": "Warning", "value": "#D99A16", "mode": "derived", "role": "Caution, attention, and pending conditions" },
-      { "name": "Error", "value": "#D94332", "mode": "derived", "role": "Errors, destructive actions, and critical states" }
-    ],
-    "semanticColors": {
-      "paper": { "source": "Signal", "stop": 50, "role": "Background: primary canvas and light surfaces" },
-      "ink": { "source": "Signal", "stop": 900, "role": "Foreground: primary text, marks, and dark surfaces" },
-      "border": { "source": "Ink", "mode": "ink-alpha", "opacity": 0.2, "value": "#182126", "role": "Borders, dividers, and structural lines" }
-    },
-    "colorScale": {
-      "lightSteps": 10,
-      "darkSteps": 10,
-      "hueMultiplier": 1.1,
-      "hueFlip": false,
-      "saturationMultiplier": 1.1,
-      "saturationFlip": false,
-      "contrastColorMode": "highest-contrast-endpoint",
-      "contrast": 1
-    },
-    "colorScales": {
-      "Accent": { "mode": "linked" },
-      "Success": { "mode": "linked" },
-      "Warning": { "mode": "linked" },
-      "Error": { "mode": "linked" }
-    },
-    "typography": {
-      "display": { "family": "Georgia", "source": "", "weight": 400 },
-      "body": { "family": "Geist Sans", "source": "", "weight": 400 },
-      "utility": { "family": "Geist Mono", "source": "", "weight": 500 }
-    },
-    "spacing": { "1": "4px", "2": "8px", "4": "16px", "8": "32px", "16": "64px" },
-    "radii": { "small": "4px", "medium": "12px", "full": "999px" },
-    "shadows": {
-      "soft": "0 5px 18px rgba(0,0,0,0.18)",
-      "lift": "0 12px 28px rgba(0,0,0,0.32), 0 2px 5px rgba(0,0,0,0.20)"
-    }
-  },
   "imagery": {
     "principle": "Images reveal relationships; they never act as generic decoration.",
     "directions": [
-      { "name": "Presence", "description": "A clear relationship between subject and space." },
-      { "name": "Material", "description": "Real texture, directional light, and close detail." },
-      { "name": "Intervention", "description": "Color as commentary, not as a filter." }
+      {
+        "name": "Focused Work",
+        "asset": "21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png",
+        "description": "A sharp editorial character caught in a recognizable moment of concentration.",
+        "prompt": "Vertical editorial illustration of an expressive primate character working at a laptop, shown in a close three-quarter crop. Build the figure from bold, angular cut-paper shapes with crisp edges and minimal internal detail. Use a restricted palette of Bananas yellow, electric blue, and near-black: blue defines the main body and facial planes, yellow creates highlights and the laptop, and black forms the background and deepest shadows. Add subtle directional glow and soft tonal falloff without losing the flat graphic silhouette. Sophisticated, focused, slightly irreverent; no text, no photorealism, no generic cartoon styling."
+      },
+      {
+        "name": "Deliberate Pause",
+        "asset": "70cea2c28ef2026ed23351237ec1316a199714b806711238ad59dd4de8073977.png",
+        "description": "A composed character and generous field turn stillness into a confident gesture.",
+        "prompt": "Vertical editorial illustration of a calm primate character seated cross-legged in a tailored robe, eyes closed and hands resting naturally. Use a centered full-body composition with generous negative space and an iconic, sculptural silhouette. Construct the image from sharp vector-like cut-paper shapes in Bananas yellow and near-black, with sparse electric-blue edge accents that create chromatic depth. Let yellow dominate both the background and illuminated planes while black carries the clothing folds, facial structure, and weight of the figure. Add a restrained grain and soft luminous field while preserving crisp graphic edges. Meditative, intelligent, assured, and unexpected; no text, no photorealism, no decorative scenery."
+      }
     ],
     "do": "Show action, imperfection, and enough context to understand the scene.",
     "avoid": "Obvious stock imagery, staged gestures, and filters that flatten skin tones."
   },
   "iconography": {
-    "principle": "A shared drawing logic makes every symbol feel related.",
-    "grid": "24 × 24",
-    "stroke": "1.5 px",
-    "corners": "2 px",
-    "style": "Outline"
-  },
-  "motionAndSound": {
-    "principle": "Enter with direction. Remain at rest.",
-    "motion": {
-      "fast": "160ms",
-      "standard": "280ms",
-      "expressive": "520ms",
-      "easing": "cubic-bezier(0.2, 0, 0, 1)"
-    },
-    "sound": "Three notes, soft attack, under one second. Use only as a user-enabled confirmation."
+    "principle": "Bring your own icons. Choose one source and use it consistently.",
+    "library": "Lucide",
+    "variant": "Outline",
+    "source": "https://lucide.dev/icons/"
   },
   "informationAndData": {
     "principle": "Data makes differences legible and decisions verifiable.",
@@ -149,7 +135,33 @@
   ],
   "provenance": {
     "evidence": [],
-    "decisions": ["channels", "visual.colors", "visual.semanticColors", "visual.colorScale"],
+    "decisions": [
+      "channels",
+      "visual.colors",
+      "visual.semanticColors",
+      "visual.colorScale",
+      "meta.brandName",
+      "essence.purpose",
+      "voice.say",
+      "voice.dontSay",
+      "visual.typography.headings.family",
+      "visual.typography.headings.source",
+      "visual.typography.headings.weight",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
     "proposals": [
       "expressionPrinciples",
       "voice",

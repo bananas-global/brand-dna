@@ -22,18 +22,29 @@
         "source": { "type": "string" },
         "weight": { "type": "integer", "minimum": 100, "maximum": 900, "multipleOf": 100 }
       }
+    },
+    "shadowToken": {
+      "type": "object",
+      "required": ["distance", "angle", "blur", "spread", "colorStop", "opacity"],
+      "additionalProperties": false,
+      "properties": {
+        "distance": { "type": "number", "minimum": 0, "maximum": 48 },
+        "angle": { "type": "number", "minimum": 0, "maximum": 360 },
+        "blur": { "type": "number", "minimum": 0, "maximum": 96 },
+        "spread": { "type": "number", "minimum": -16, "maximum": 32 },
+        "colorStop": { "type": "integer", "minimum": 0, "maximum": 1000, "multipleOf": 50 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1, "multipleOf": 0.01 }
+      }
     }
   },
   "required": [
     "meta",
     "essence",
-    "positioning",
-    "expressionPrinciples",
     "voice",
     "visual",
+    "positioning",
     "imagery",
     "iconography",
-    "motionAndSound",
     "informationAndData",
     "accessibility",
     "channels",
@@ -46,22 +57,56 @@
     },
     "essence": {
       "type": "object",
-      "required": ["centralIdea", "purpose", "role", "tension", "promise"]
+      "required": ["purpose"],
+      "additionalProperties": false,
+      "properties": {
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "required": ["dimensions", "say", "dontSay"],
+      "additionalProperties": false,
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["name", "left", "right", "value", "description"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "left": { "type": "string", "minLength": 1 },
+              "right": { "type": "string", "minLength": 1 },
+              "value": { "type": "integer", "minimum": 0, "maximum": 100 },
+              "description": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "say": { "type": "string", "minLength": 1 },
+        "dontSay": { "type": "string", "minLength": 1 }
+      }
     },
     "positioning": {
       "type": "object",
-      "required": ["statement", "primaryAudience", "influencingAudience"]
+      "required": ["statement", "primaryAudience", "influencingAudience"],
+      "additionalProperties": false,
+      "properties": {
+        "statement": { "type": "string", "minLength": 1 },
+        "primaryAudience": { "type": "string", "minLength": 1 },
+        "influencingAudience": { "type": "string", "minLength": 1 }
+      }
     },
-    "expressionPrinciples": { "type": "array", "minItems": 3, "maxItems": 3 },
-    "voice": { "type": "object" },
     "visual": {
       "type": "object",
-      "required": ["signatureRule", "colors", "semanticColors", "colorScale", "colorScales", "typography", "spacing", "radii", "shadows"],
+      "required": ["signatureRule", "colors", "semanticColors", "colorScale", "colorScales", "typography", "borders", "shadows"],
       "properties": {
         "colors": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 3,
+          "minItems": 5,
+          "maxItems": 5,
           "items": {
             "type": "object",
             "required": ["name", "value", "mode", "role"],
@@ -135,22 +180,70 @@
         },
         "typography": {
           "type": "object",
-          "required": ["display", "body", "utility"],
+          "required": ["headings", "body", "utility"],
           "additionalProperties": false,
           "properties": {
-            "display": { "$ref": "#/$defs/fontRole" },
+            "headings": { "$ref": "#/$defs/fontRole" },
             "body": { "$ref": "#/$defs/fontRole" },
             "utility": { "$ref": "#/$defs/fontRole" }
+          }
+        },
+        "borders": {
+          "type": "object",
+          "required": ["thickness", "radius", "buttonPill"],
+          "additionalProperties": false,
+          "properties": {
+            "thickness": { "enum": ["thin", "medium", "bold"] },
+            "radius": { "type": "number", "minimum": 0, "maximum": 3, "multipleOf": 0.1 },
+            "buttonPill": { "type": "boolean" }
+          }
+        },
+        "shadows": {
+          "type": "object",
+          "required": ["base", "multiplier"],
+          "additionalProperties": false,
+          "properties": {
+            "base": { "$ref": "#/$defs/shadowToken" },
+            "multiplier": { "type": "number", "minimum": 1, "maximum": 3, "multipleOf": 0.1 }
           }
         }
       }
     },
-    "imagery": { "type": "object" },
+    "imagery": {
+      "type": "object",
+      "required": ["principle", "directions", "do", "avoid"],
+      "additionalProperties": false,
+      "properties": {
+        "principle": { "type": "string", "minLength": 1 },
+        "directions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "asset", "description", "prompt"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "asset": { "type": "string", "pattern": "^[^/]+\\.(avif|jpe?g|png|svg|webp)$" },
+              "description": { "type": "string", "minLength": 1 },
+              "prompt": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "do": { "type": "string" },
+        "avoid": { "type": "string" }
+      }
+    },
     "iconography": {
       "type": "object",
-      "required": ["principle", "grid", "stroke", "corners", "style"]
+      "required": ["principle", "library", "variant", "source"],
+      "properties": {
+        "principle": { "type": "string" },
+        "library": { "enum": ["Lucide", "Phosphor", "Material Symbols", "Heroicons", "Font Awesome Free"] },
+        "variant": { "type": "string" },
+        "source": { "type": "string", "format": "uri" }
+      }
     },
-    "motionAndSound": { "type": "object" },
     "informationAndData": { "type": "object" },
     "accessibility": { "type": "object" },
     "channels": { "type": "array", "minItems": 4, "maxItems": 4 },
