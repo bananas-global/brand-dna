@@ -5,6 +5,7 @@ import {
   buildUpdatePrompt,
   diffBrandDna,
   draftStorageKey,
+  rebaseDraft,
   reconcileColorBases,
   setAtPath,
   type JsonValue,
@@ -584,9 +585,13 @@ export default function Home() {
   const [draft, setDraft] = useState<BrandDna>(() => {
     try {
       const saved = localStorage.getItem(draftStorageKey);
-      return saved
-        ? reconcileColorBases(JSON.parse(saved).draft as BrandDna, initialBrandDna)
-        : structuredClone(initialBrandDna);
+      if (!saved) return structuredClone(initialBrandDna);
+      const { draft: savedDraft, source: savedSource } = JSON.parse(saved) as {
+        draft: BrandDna;
+        source?: BrandDna;
+      };
+      const reconciled = reconcileColorBases(savedDraft, initialBrandDna);
+      return savedSource ? rebaseDraft(reconciled, savedSource, initialBrandDna) : reconciled;
     } catch {
       return structuredClone(initialBrandDna);
     }
@@ -671,7 +676,7 @@ export default function Home() {
   }, [typography]);
 
   useEffect(() => {
-    localStorage.setItem(draftStorageKey, JSON.stringify({ draft }));
+    localStorage.setItem(draftStorageKey, JSON.stringify({ draft, source: initialBrandDna }));
   }, [draft]);
 
   useEffect(() => {

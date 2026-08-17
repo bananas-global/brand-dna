@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildChangeRequest, buildUpdatePrompt, diffBrandDna, reconcileColorBases, setAtPath } from "./editor";
+import { buildChangeRequest, buildUpdatePrompt, diffBrandDna, rebaseDraft, reconcileColorBases, setAtPath } from "./editor";
 
 describe("Brand DNA editor contract", () => {
   it("updates nested paths immutably and reports only exact changes", () => {
@@ -201,6 +201,48 @@ describe("Brand DNA editor contract", () => {
       headings: { family: "Fraunces", source: "", weight: 400 },
       body: { family: "Inter", source: "", weight: 400 },
       utility: { family: "Roboto Mono", source: "", weight: 500 },
+    });
+  });
+
+  it("adopts source typography the designer never edited and keeps the fonts they chose", () => {
+    const base = {
+      visual: {
+        typography: {
+          headings: { family: "Sedgwick Ave Display", source: "https://fonts.google.com/specimen/Sedgwick+Ave+Display", weight: 400 },
+          body: { family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400 },
+        },
+      },
+    };
+    const source = {
+      visual: {
+        typography: {
+          headings: { family: "Space Grotesk", source: "https://fonts.google.com/specimen/Space+Grotesk", weight: 700 },
+          body: { family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400 },
+        },
+      },
+    };
+    const untouched = structuredClone(base);
+    const edited = setAtPath(structuredClone(base), "visual.typography.body.family", "Fraunces");
+
+    expect(rebaseDraft(untouched, base, source).visual.typography).toEqual(source.visual.typography);
+    expect(rebaseDraft(edited, base, source).visual.typography).toEqual({
+      headings: source.visual.typography.headings,
+      body: { ...base.visual.typography.body, family: "Fraunces" },
+    });
+    expect(diffBrandDna(base, rebaseDraft(untouched, base, base))).toEqual([]);
+  });
+
+  it("delivers new source fields and added array entries to an existing draft", () => {
+    const base = { visual: { borders: { thickness: "thin" } }, channels: [{ name: "Web" }] };
+    const source = {
+      visual: { borders: { thickness: "thin", buttonPill: true } },
+      channels: [{ name: "Web" }, { name: "Email" }],
+    };
+    const draft = setAtPath(structuredClone(base), "visual.borders.thickness", "bold");
+
+    expect(rebaseDraft(draft, base, source)).toEqual({
+      visual: { borders: { thickness: "bold", buttonPill: true } },
+      channels: [{ name: "Web" }, { name: "Email" }],
     });
   });
 

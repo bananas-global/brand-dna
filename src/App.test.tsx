@@ -333,17 +333,53 @@ describe("Brand DNA site", () => {
     fireEvent.change(screen.getByLabelText("Headings font link"), {
       target: { value: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@400;700&display=swap" },
     });
-    expect(screen.getByText("DM Serif Display · 400")).toBeInTheDocument();
-    const headingsWeight = await screen.findByRole("combobox", { name: "Headings preferred weight" });
-    expect(headingsWeight).toHaveValue("400");
-    await waitFor(() => expect(within(headingsWeight).getByRole("option", { name: "700" })).toBeInTheDocument());
-    await user.selectOptions(headingsWeight, "700");
     expect(screen.getByText("DM Serif Display · 700")).toBeInTheDocument();
+    const headingsWeight = await screen.findByRole("combobox", { name: "Headings preferred weight" });
+    expect(headingsWeight).toHaveValue("700");
+    await waitFor(() => expect(within(headingsWeight).getByRole("option", { name: "400" })).toBeInTheDocument());
     await user.selectOptions(headingsWeight, "400");
     expect(screen.getByText("DM Serif Display · 400")).toBeInTheDocument();
+    await user.selectOptions(headingsWeight, "700");
+    expect(screen.getByText("DM Serif Display · 700")).toBeInTheDocument();
     await waitFor(() => expect(document.querySelector('link[data-brand-font="headings"]')).toHaveAttribute(
       "href",
-      "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@400&display=swap",
+      "https://fonts.googleapis.com/css2?family=DM+Serif+Display:wght@700&display=swap",
+    ));
+  });
+
+  it("moves a saved draft onto new source fonts without discarding its own edits", async () => {
+    type StoredFont = { family: string; source: string; weight: number };
+    type StoredDocument = { meta: { brandName: string }; visual: { typography: { headings: StoredFont } } };
+    const user = userEvent.setup();
+    const initial = render(<App />);
+
+    const saved = JSON.parse(localStorage.getItem(draftStorageKey) ?? "{}") as {
+      draft: StoredDocument;
+      source: StoredDocument;
+    };
+    const sourceHeadings = { ...saved.source.visual.typography.headings };
+    const staleHeadings = {
+      family: "Sedgwick Ave Display",
+      source: "https://fonts.google.com/specimen/Sedgwick+Ave+Display",
+      weight: 400,
+    };
+    const stalePayload = structuredClone(saved);
+    stalePayload.draft.visual.typography.headings = { ...staleHeadings };
+    stalePayload.source.visual.typography.headings = { ...staleHeadings };
+    stalePayload.draft.meta.brandName = "draft name";
+    localStorage.setItem(draftStorageKey, JSON.stringify(stalePayload));
+    initial.unmount();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByLabelText("Brand name")).toHaveValue("draft name");
+    expect(screen.getByText("1 change")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: /Typography/ }));
+    expect(screen.getByText(`${sourceHeadings.family} · ${sourceHeadings.weight}`)).toBeInTheDocument();
+    await waitFor(() => expect(document.querySelector('link[data-brand-font="headings"]')).toHaveAttribute(
+      "href",
+      `https://fonts.googleapis.com/css2?family=${sourceHeadings.family.replaceAll(" ", "+")}:wght@${sourceHeadings.weight}&display=swap`,
     ));
   });
 
