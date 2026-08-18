@@ -28,3 +28,6 @@ yarn-error.log*
 
 /dist/
 *.tsbuildinfo
+
+# local agent config
+.claude/settings.local.json

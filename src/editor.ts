@@ -277,9 +277,35 @@ export function diffBrandDna(before: JsonValue, after: JsonValue, path = ""): Br
   return [{ path, before, after }];
 }
 
+const pathParts = (path: string) => path.replace(/\[(\d+)\]/g, ".$1").split(".");
+
+const getAtPath = (root: JsonValue, path: string) => pathParts(path).reduce<JsonValue | undefined>(
+  (cursor, part) => (cursor && typeof cursor === "object"
+    ? (cursor as { [key: string]: JsonValue })[part]
+    : undefined),
+  root,
+);
+
+const containerAt = (root: JsonValue, path: string) => {
+  const parts = pathParts(path);
+  return parts.length === 1 ? root : getAtPath(root, parts.slice(0, -1).join("."));
+};
+
+const sameValue = (left: JsonValue | undefined, right: JsonValue | undefined) =>
+  diffBrandDna(left ?? null, right ?? null).length === 0;
+
+export function rebaseDraft<T extends JsonValue>(draft: T, base: JsonValue, source: JsonValue): T {
+  return diffBrandDna(base, source).reduce((result, { path, before, after }) => {
+    const container = containerAt(result, path);
+    if (!container || typeof container !== "object") return result;
+    // The draft still carries the value it was saved against, so the newer source owns this path.
+    return sameValue(getAtPath(result, path), before) ? setAtPath(result, path, after) : result;
+  }, draft);
+}
+
 export function setAtPath<T>(source: T, path: string, value: JsonValue): T {
   const result = structuredClone(source) as Record<string, unknown>;
-  const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".");
+  const parts = pathParts(path);
   let cursor: Record<string, unknown> | unknown[] = result;
 
   parts.forEach((part, index) => {

@@ -89,9 +89,9 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
   });
   assert.deepEqual(JSON.parse(sourceDna).visual.typography, {
     headings: {
-      family: "Sedgwick Ave Display",
-      source: "https://fonts.google.com/specimen/Sedgwick+Ave+Display?preview.layout=grid&categoryFilters=Feeling:%2FExpressive%2FArtistic&preview.script=Latn",
-      weight: 400,
+      family: "Space Grotesk",
+      source: "https://fonts.google.com/specimen/Space+Grotesk?preview.script=Latn",
+      weight: 700,
     },
     body: { family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400 },
     utility: { family: "Space Mono", source: "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", weight: 400 },
