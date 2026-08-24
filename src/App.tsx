@@ -4,7 +4,7 @@ import {
   buildChangeRequest,
   buildUpdatePrompt,
   diffBrandDna,
-  draftStorageKey,
+  getDraftStorageKey,
   rebaseDraft,
   reconcileColorBases,
   setAtPath,
@@ -13,16 +13,25 @@ import {
 import { generateColorScale, getColorAtStop, getContrastColor, getScaleTones, resolveBaseColorValue } from "./color-scale";
 import { buildGoogleFontStylesheet, detectGoogleFontWeights, parseGoogleFontLink } from "./google-fonts";
 
-const brandDnaDownloadUrl = "/brand-dna/brand/brand-dna.json";
+const publicAssetUrl = (asset: string) => `${__BRAND_DNA_BASE_PATH__}${asset.replace(/^\//, "")}`;
+const brandDnaDownloadUrl = publicAssetUrl("brand-dna.json");
+const brandDnaManifestUrl = publicAssetUrl("manifest.json");
+const brandSourcePath = __BRAND_DNA_SOURCE_DIR__.replace(/\/$/, "");
 type ColorMode = "source" | "complementary" | "derived" | "custom";
 type BrandColor = { name: string; value: string; mode: ColorMode; role: string };
+type AdditionalBrandColor = { name: string; value: string; role: string };
+type AdditionalBrandFont = { name: string; family: string; source: string; weight: number; role: string };
 type EmbeddedBrandDna = typeof __BRAND_DNA__;
 type ColorScaleSettings = EmbeddedBrandDna["visual"]["colorScale"];
 type ColorScaleLink = { mode: "linked" | "custom"; settings?: ColorScaleSettings };
 type BrandDna = Omit<EmbeddedBrandDna, "visual"> & {
-  visual: Omit<EmbeddedBrandDna["visual"], "colors" | "colorScales"> & {
+  visual: Omit<EmbeddedBrandDna["visual"], "colors" | "additionalColors" | "colorScales" | "typography"> & {
     colors: BrandColor[];
+    additionalColors: AdditionalBrandColor[];
     colorScales: Record<string, ColorScaleLink>;
+    typography: Omit<EmbeddedBrandDna["visual"]["typography"], "additional"> & {
+      additional: AdditionalBrandFont[];
+    };
   };
 };
 const linkedColorScales = Object.fromEntries(
@@ -33,9 +42,15 @@ const initialBrandDna: BrandDna = {
   ...embeddedBrandDna,
   visual: {
     ...embeddedBrandDna.visual,
+    additionalColors: embeddedBrandDna.visual.additionalColors ?? [],
     colorScales: embeddedBrandDna.visual.colorScales ?? linkedColorScales,
+    typography: {
+      ...embeddedBrandDna.visual.typography,
+      additional: embeddedBrandDna.visual.typography.additional ?? [],
+    },
   },
 };
+const brandDraftStorageKey = getDraftStorageKey(initialBrandDna.meta.brandName, initialBrandDna.meta.schemaVersion);
 
 const sections = [
   ["about", "About"],
@@ -90,6 +105,13 @@ const Swatch = ({ name, hex, role, displayValue = hex }: { name: string; hex: st
   <SpecimenCard className="swatch" name={name} value={displayValue} description={role}>
     <span className="swatch-color" style={{ backgroundColor: hex }} aria-hidden="true" />
   </SpecimenCard>
+);
+
+const ExtendedSwatch = ({ name, value, role }: AdditionalBrandColor) => (
+  <article className="extended-swatch">
+    <i style={{ backgroundColor: value }} aria-hidden="true" />
+    <div><span><b>{name}</b><code>{value}</code></span><p>{role}</p></div>
+  </article>
 );
 
 const ColorScale = ({ name, hex, settings, markers }: {
@@ -169,7 +191,7 @@ const LogoVariant = ({ name, file, usage, tone = "light", compact = false }: {
     value={file}
     description={usage}
   >
-    <img src={`/brand-dna/brand/logo/${file}`} alt={`${name} logo example`} />
+    <img src={publicAssetUrl(`logo/${file}`)} alt={`${name} logo example`} />
   </SpecimenCard>
 );
 
@@ -183,6 +205,7 @@ type EditorPanelProps = {
   onCompare: () => void;
   onCopy: () => void;
   onDownload: () => void;
+  onDownloadJson: () => void;
   onReset: () => void;
   onClose: () => void;
 };
@@ -373,7 +396,7 @@ const getShadowCss = (
   return `${x}px ${y}px ${token.blur}px ${token.spread}px ${color}`;
 };
 
-function EditorPanel({ section, draft, changeCount, comparing, status, onChange, onCompare, onCopy, onDownload, onReset, onClose }: EditorPanelProps) {
+function EditorPanel({ section, draft, changeCount, comparing, status, onChange, onCompare, onCopy, onDownload, onDownloadJson, onReset, onClose }: EditorPanelProps) {
   const sectionLabel = sections.find(([id]) => id === section)?.[1];
   const signal = draft.visual.colors.find((color) => color.name === "Signal") ?? draft.visual.colors[0];
   const border = draft.visual.semanticColors.border;
@@ -398,6 +421,27 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
       <FontRoleEditor fontRole="headings" font={draft.visual.typography.headings} onChange={onChange} />
       <FontRoleEditor fontRole="body" font={draft.visual.typography.body} onChange={onChange} />
       <FontRoleEditor fontRole="utility" font={draft.visual.typography.utility} onChange={onChange} />
+      <details className="editor-additional-colors editor-additional-fonts">
+        <summary><span>Additional typefaces</span><output>{draft.visual.typography.additional.length}</output></summary>
+        <div className="editor-additional-body">
+          <p>Optional typefaces extend the system without replacing the three core roles.</p>
+          {draft.visual.typography.additional.map((font, index) => <section className="editor-additional-color" aria-label={`Additional typeface ${index + 1}`} key={index}>
+            <div className="editor-additional-heading"><b>Typeface {String(index + 1).padStart(2, "0")}</b><button type="button" onClick={() => onChange(
+              "visual.typography.additional",
+              draft.visual.typography.additional.filter((_, fontIndex) => fontIndex !== index) as unknown as JsonValue,
+            )}>Remove</button></div>
+            <Field label="Name" value={font.name} onChange={(value) => onChange(`visual.typography.additional[${index}].name`, value)} />
+            <Field label="Family" value={font.family} onChange={(value) => onChange(`visual.typography.additional[${index}].family`, value)} />
+            <Field label="Google Fonts link" value={font.source} onChange={(value) => onChange(`visual.typography.additional[${index}].source`, value)} />
+            <label className="editor-field"><span>Preferred weight</span><input type="number" min="100" max="900" step="100" value={font.weight} onChange={(event) => onChange(`visual.typography.additional[${index}].weight`, Number(event.target.value))} /></label>
+            <Field label="Role" value={font.role} onChange={(value) => onChange(`visual.typography.additional[${index}].role`, value)} />
+          </section>)}
+          <button className="editor-add-color" type="button" disabled={draft.visual.typography.additional.length >= 12} onClick={() => onChange(
+            "visual.typography.additional",
+            [...draft.visual.typography.additional, { name: `Typeface ${draft.visual.typography.additional.length + 1}`, family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400, role: "Supporting expression" }] as unknown as JsonValue,
+          )}><Plus aria-hidden="true" size={14} />Add typeface</button>
+        </div>
+      </details>
     </>,
     color: <>
       <div className="editor-palette-label">Base colors</div>
@@ -469,6 +513,43 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
           </section>
         </Fragment>;
       })}
+      <details className="editor-additional-colors">
+        <summary><span>Additional brand colors</span><output>{draft.visual.additionalColors.length}</output></summary>
+        <div className="editor-additional-body">
+          <p>Optional colors extend the brand palette without changing utility colors, semantic colors, or generated scales.</p>
+          {draft.visual.additionalColors.map((color, index) => <section className="editor-additional-color" aria-label={`Additional color ${index + 1}`} key={index}>
+            <div className="editor-additional-heading"><b>Color {String(index + 1).padStart(2, "0")}</b><button type="button" onClick={() => onChange(
+              "visual.additionalColors",
+              draft.visual.additionalColors.filter((_, colorIndex) => colorIndex !== index) as unknown as JsonValue,
+            )}>Remove</button></div>
+            <label className="editor-field">
+              <span>Name</span>
+              <input aria-label={`Additional color ${index + 1} name`} value={color.name} onChange={(event) => onChange(`visual.additionalColors[${index}].name`, event.target.value)} />
+            </label>
+            <label className="editor-custom-color">
+              <input aria-label={`Choose additional color ${index + 1}`} type="color" value={color.value} onChange={(event) => onChange(`visual.additionalColors[${index}].value`, event.target.value.toUpperCase())} />
+              <input aria-label={`Additional color ${index + 1} hex`} value={color.value} onChange={(event) => onChange(`visual.additionalColors[${index}].value`, event.target.value)} />
+            </label>
+            <label className="editor-field">
+              <span>Role</span>
+              <input aria-label={`Additional color ${index + 1} role`} value={color.role} onChange={(event) => onChange(`visual.additionalColors[${index}].role`, event.target.value)} />
+            </label>
+          </section>)}
+          <button
+            className="editor-add-color"
+            type="button"
+            disabled={draft.visual.additionalColors.length >= 12}
+            onClick={() => {
+              const index = draft.visual.additionalColors.length;
+              const seedColors = ["#A98BFF", "#FF7A59", "#2EC4B6", "#F06C9B"];
+              onChange("visual.additionalColors", [
+                ...draft.visual.additionalColors,
+                { name: `Color ${index + 1}`, value: seedColors[index % seedColors.length], role: "Supporting brand expression" },
+              ] as unknown as JsonValue);
+            }}
+          ><Plus aria-hidden="true" size={14} />Add color</button>
+        </div>
+      </details>
     </>,
     borders: <>
       <OptionField label="Border thickness" value={draft.visual.borders.thickness} options={["thin", "medium", "bold"]} onChange={(value) => onChange("visual.borders.thickness", value)} />
@@ -491,7 +572,7 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
     imagery: <>
       <div className="editor-asset-note">
         <p>Drop your image files into:</p>
-        <code>public/brand/imagery/</code>
+        <code>{brandSourcePath}/imagery/</code>
       </div>
       {draft.imagery.directions.map((direction, index) => <section className="editor-imagery-entry" key={`${direction.asset}-${index}`}>
         <p className="editor-palette-label">Image {String(index + 1).padStart(2, "0")}</p>
@@ -570,9 +651,10 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
     <div className="editor-actions">
       <button type="button" aria-label={comparing ? "Show draft" : "Compare original"} onClick={onCompare}>{comparing ? "Draft" : "Compare"}</button>
       <button type="button" aria-label="Copy update prompt" onClick={onCopy} disabled={changeCount === 0}>Copy</button>
-      <button type="button" aria-label="Download changes" onClick={onDownload} disabled={changeCount === 0}>Download</button>
+      <button type="button" aria-label="Download changes" onClick={onDownload} disabled={changeCount === 0}>Changes</button>
+      <button type="button" aria-label="Download updated JSON" onClick={onDownloadJson} disabled={changeCount === 0}>JSON</button>
       <button className="editor-reset" type="button" aria-label="Reset draft" onClick={onReset} disabled={changeCount === 0}>Reset</button>
-      <p role="status" aria-live="polite">{status || "Changes stay in this browser until you copy them."}</p>
+      <p role="status" aria-live="polite">{status || "Local preview only. Changes stay in this browser and never modify the published Brand DNA."}</p>
     </div>
   </aside>;
 }
@@ -584,7 +666,7 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [draft, setDraft] = useState<BrandDna>(() => {
     try {
-      const saved = localStorage.getItem(draftStorageKey);
+      const saved = localStorage.getItem(brandDraftStorageKey);
       if (!saved) return structuredClone(initialBrandDna);
       const { draft: savedDraft, source: savedSource } = JSON.parse(saved) as {
         draft: BrandDna;
@@ -609,6 +691,7 @@ export default function Home() {
     ...base,
     value: resolveBaseColorValue(base, signal.value),
   }));
+  const additionalColors = brandDna.visual.additionalColors ?? [];
   const ink = getColorAtStop(signal.value, brandDna.visual.colorScale, brandDna.visual.semanticColors.ink.stop);
   const borderToken = brandDna.visual.semanticColors.border;
   const border = withOpacity(ink, borderToken.opacity);
@@ -661,14 +744,17 @@ export default function Home() {
   } as CSSProperties;
 
   useEffect(() => {
-    const roles = ["headings", "body", "utility"] as const;
-    const links = roles.flatMap((role) => {
-      const stylesheet = buildGoogleFontStylesheet(typography[role].source, typography[role].weight);
+    const fonts = [
+      ...(["headings", "body", "utility"] as const).map((role) => ({ key: role, font: typography[role] })),
+      ...typography.additional.map((font, index) => ({ key: `additional-${index}`, font })),
+    ];
+    const links = fonts.flatMap(({ key, font }) => {
+      const stylesheet = buildGoogleFontStylesheet(font.source, font.weight);
       if (!stylesheet) return [];
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = stylesheet;
-      link.dataset.brandFont = role;
+      link.dataset.brandFont = key;
       document.head.append(link);
       return [link];
     });
@@ -676,7 +762,7 @@ export default function Home() {
   }, [typography]);
 
   useEffect(() => {
-    localStorage.setItem(draftStorageKey, JSON.stringify({ draft, source: initialBrandDna }));
+    localStorage.setItem(brandDraftStorageKey, JSON.stringify({ draft, source: initialBrandDna }));
   }, [draft]);
 
   useEffect(() => {
@@ -724,13 +810,13 @@ export default function Home() {
   }, []);
 
   const copyPrompt = async () => {
-    const prompt = buildUpdatePrompt(initialBrandDna, draft);
+    const prompt = buildUpdatePrompt(initialBrandDna, draft, __BRAND_DNA_TARGET__);
     await navigator.clipboard.writeText(prompt);
     setStatus("Update prompt copied.");
   };
 
   const downloadChanges = () => {
-    const request = buildChangeRequest(initialBrandDna, draft);
+    const request = buildChangeRequest(initialBrandDna, draft, __BRAND_DNA_TARGET__);
     const url = URL.createObjectURL(new Blob([JSON.stringify(request, null, 2)], { type: "application/json" }));
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -738,6 +824,16 @@ export default function Home() {
     anchor.click();
     URL.revokeObjectURL(url);
     setStatus("Change request downloaded.");
+  };
+
+  const downloadUpdatedJson = () => {
+    const url = URL.createObjectURL(new Blob([`${JSON.stringify(draft, null, 2)}\n`], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "brand-dna.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setStatus("Updated Brand DNA JSON downloaded.");
   };
 
   const resetDraft = () => {
@@ -762,6 +858,7 @@ export default function Home() {
           </div>
           <span>v{brandDna.meta.version}</span>
           <a href={brandDnaDownloadUrl} download>Download JSON ↓</a>
+          <a className="machine-link" href={brandDnaManifestUrl}>For AI ↗</a>
         </div>
       </header>
 
@@ -806,7 +903,7 @@ export default function Home() {
           <Chapter id="logo" eyebrow="02 / Signature" title="Logo" note="Use the right asset for the available space and background." className="logo-page">
             <div className="logo-source-note">
               <p className="field-label">Asset folder</p>
-              <code>public/brand/logo/</code>
+              <code>{brandSourcePath}/logo/</code>
               <p>Replace the SVG files in this folder while keeping their filenames. The examples below update automatically.</p>
             </div>
             <div className="logo-variants" role="region" aria-label="Minimum logo asset set">
@@ -832,18 +929,32 @@ export default function Home() {
               <article className="type-body"><span>Body</span><p>Use body type for sustained reading, instructions, and supporting detail.</p><code>{brandDna.visual.typography.body.family} · {brandDna.visual.typography.body.weight}</code></article>
               <article className="type-utility"><span>Utility</span><p>0123456789<br />ABCDEFGHIJKLMNOPQRSTUVWXYZ</p><code>{brandDna.visual.typography.utility.family} · {brandDna.visual.typography.utility.weight}</code></article>
             </div>
+            {brandDna.visual.typography.additional.length > 0 && <div className="type-additional" role="region" aria-label="Additional typefaces">
+              <p className="field-label">Extended type system</p>
+              {brandDna.visual.typography.additional.map((font, index) => <article key={`${font.name}-${index}`} style={{ fontFamily: `"${font.family}", sans-serif`, fontWeight: font.weight }}>
+                <span>{font.name}</span><p>{font.role}</p><code>{font.family} · {font.weight}</code>
+              </article>)}
+            </div>}
           </Chapter>
         </div>
 
         <div hidden={activeTab !== "color"}>
           <Chapter id="color" eyebrow="04 / Palette" title="Color" note="Use color to organize, signal, and create recognition." className="color-page">
             <div className="palette-groups">
-              {paletteGroups.map((group) => <section className="palette-group" aria-labelledby={`palette-${group.id}`} key={group.id}>
-                <h2 id={`palette-${group.id}`}>{group.label}</h2>
-                <div className={`swatches swatches-${group.id}`}>
-                  {group.colors.map((color) => <Swatch key={color.name} name={color.name} hex={color.value} role={color.role} displayValue={"displayValue" in color ? color.displayValue : undefined} />)}
-                </div>
-              </section>)}
+              {paletteGroups.map((group) => <Fragment key={group.id}>
+                <section className="palette-group" aria-labelledby={`palette-${group.id}`}>
+                  <h2 id={`palette-${group.id}`}>{group.label}</h2>
+                  <div className={`swatches swatches-${group.id}`}>
+                    {group.colors.map((color) => <Swatch key={color.name} name={color.name} hex={color.value} role={color.role} displayValue={"displayValue" in color ? color.displayValue : undefined} />)}
+                  </div>
+                </section>
+                {group.id === "brand" && additionalColors.length > 0 && <section className="palette-group palette-group-extended" aria-labelledby="palette-extended">
+                  <h2 id="palette-extended">Extended palette</h2>
+                  <div className="extended-swatches">
+                    {additionalColors.map((color, index) => <ExtendedSwatch key={`${index}-${color.name}`} {...color} />)}
+                  </div>
+                </section>}
+              </Fragment>)}
             </div>
             <section className="color-scale-system" aria-labelledby="color-scale-heading">
               <div className="color-scale-head"><div><p className="field-label">Generated system</p><h2 id="color-scale-heading">Light to dark</h2></div><p>Signal anchors Paper and Ink. Border uses Ink at an editable 20% opacity by default.</p></div>
@@ -914,7 +1025,7 @@ export default function Home() {
             <div className="imagery-references">
               {brandDna.imagery.directions.map((direction) => <section className="imagery-reference" key={direction.asset}>
                 <SpecimenCard className="imagery-card" name={direction.name} value={direction.asset} description={direction.description}>
-                  <img src={`/brand-dna/brand/imagery/${direction.asset}`} alt={`${direction.name} visual reference`} />
+                  <img src={publicAssetUrl(`imagery/${direction.asset}`)} alt={`${direction.name} visual reference`} />
                 </SpecimenCard>
                 <div className="imagery-prompt">
                   <p className="field-label">Generation prompt</p>
@@ -992,6 +1103,7 @@ export default function Home() {
         onCompare={() => setComparing((current) => !current)}
         onCopy={copyPrompt}
         onDownload={downloadChanges}
+        onDownloadJson={downloadUpdatedJson}
         onReset={resetDraft}
         onClose={() => { setIsEditing(false); setComparing(false); }}
       />}

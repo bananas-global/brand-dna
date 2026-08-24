@@ -9,7 +9,7 @@ test("builds a static GitHub Pages document with repository-safe metadata", asyn
   const html = await readFile(new URL("index.html", distRoot), "utf8");
 
   assert.match(html, /<html[^>]+lang="en-US"/i);
-  assert.match(html, /<title>Brand DNA — Open Source Starter<\/title>/i);
+  assert.match(html, /<title>bananas — Brand DNA<\/title>/i);
   assert.match(html, /href="\/brand-dna\/favicon\.svg"/i);
   assert.match(html, /https:\/\/bananas-global\.github\.io\/brand-dna\/og\.png/i);
   assert.match(html, /src="\/brand-dna\/assets\/.+\.js"/i);
@@ -22,17 +22,18 @@ test("copies every public asset and emits self-hosted fonts", async () => {
   await Promise.all([
     access(new URL("favicon.svg", distRoot)),
     access(new URL("og.png", distRoot)),
-    access(new URL("brand/brand-dna.json", distRoot)),
-    access(new URL("brand/brand-dna.schema.json", distRoot)),
-    access(new URL("brand/logo/default.svg", distRoot)),
-    access(new URL("brand/logo/icon.svg", distRoot)),
-    access(new URL("brand/logo/wordmark.svg", distRoot)),
-    access(new URL("brand/logo/black.svg", distRoot)),
-    access(new URL("brand/logo/white.svg", distRoot)),
-    access(new URL("brand/imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png", distRoot)),
-    access(new URL("brand/imagery/70cea2c28ef2026ed23351237ec1316a199714b806711238ad59dd4de8073977.png", distRoot)),
+    access(new URL("brand-dna.json", distRoot)),
+    access(new URL("brand-dna.schema.json", distRoot)),
+    access(new URL("manifest.json", distRoot)),
+    access(new URL("logo/default.svg", distRoot)),
+    access(new URL("logo/icon.svg", distRoot)),
+    access(new URL("logo/wordmark.svg", distRoot)),
+    access(new URL("logo/black.svg", distRoot)),
+    access(new URL("logo/white.svg", distRoot)),
+    access(new URL("imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png", distRoot)),
+    access(new URL("imagery/70cea2c28ef2026ed23351237ec1316a199714b806711238ad59dd4de8073977.png", distRoot)),
   ]);
-  await assert.rejects(access(new URL("brand/logo/small-use.svg", distRoot)));
+  await assert.rejects(access(new URL("logo/small-use.svg", distRoot)));
 
   const assetFiles = await readdir(new URL("assets/", distRoot));
   assert.ok(assetFiles.some((file) => file.endsWith(".woff2")), "expected self-hosted font assets");
@@ -41,13 +42,13 @@ test("copies every public asset and emits self-hosted fonts", async () => {
 test("keeps one canonical Brand DNA file and a browser-guided setup", async () => {
   const [sourceDna, builtDna, start] = await Promise.all([
     readFile(new URL("public/brand/brand-dna.json", projectRoot), "utf8"),
-    readFile(new URL("brand/brand-dna.json", distRoot), "utf8"),
+    readFile(new URL("brand-dna.json", distRoot), "utf8"),
     readFile(new URL("START-HERE.md", projectRoot), "utf8"),
   ]);
 
   assert.deepEqual(JSON.parse(builtDna), JSON.parse(sourceDna));
   assert.match(start, /select \*\*Edit\*\*/);
-  assert.match(start, /no backend or setup questionnaire is required/);
+  assert.match(start, /no backend or setup questionnaire is required/i);
   await assert.rejects(access(new URL(".agents/skills/brand-dna-builder/SKILL.md", projectRoot)));
   assert.equal(JSON.parse(sourceDna).meta.brandName, "bananas");
   assert.equal(JSON.parse(sourceDna).essence.purpose, "Great taste, awesome design, and affordable. It's bananas!");
@@ -73,6 +74,7 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
     { name: "Warning", value: "#ED8026", mode: "custom", role: "Caution, attention, and pending conditions" },
     { name: "Error", value: "#B82350", mode: "custom", role: "Errors, destructive actions, and critical states" },
   ]);
+  assert.deepEqual(JSON.parse(sourceDna).visual.additionalColors, []);
   assert.deepEqual(JSON.parse(sourceDna).visual.semanticColors, {
     paper: { source: "Signal", stop: 100, role: "Background: primary canvas and light surfaces" },
     ink: { source: "Signal", stop: 950, role: "Foreground: primary text, marks, and dark surfaces" },
@@ -95,6 +97,7 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
     },
     body: { family: "Inter", source: "https://fonts.google.com/specimen/Inter", weight: 400 },
     utility: { family: "Space Mono", source: "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", weight: 400 },
+    additional: [],
   });
   assert.deepEqual(JSON.parse(sourceDna).visual.borders, { thickness: "thin", radius: 0, buttonPill: false });
   assert.deepEqual(JSON.parse(sourceDna).visual.shadows, {
@@ -155,7 +158,7 @@ test("uses discrete reusable specimen cards and shared borders where content rem
   assert.doesNotMatch(css, /\.color-pairs/);
   assert.doesNotMatch(css, /--content-radius-compact/);
   assert.doesNotMatch(css, /border-radius: var\(--content-radius-compact\)/);
-  assert.match(css, /\.editor-actions \{[^}]*grid-template-columns: repeat\(4, 1fr\);/);
+  assert.match(css, /\.editor-actions \{[^}]*grid-template-columns: repeat\(5, 1fr\);/);
   assert.match(css, /\.editor-derived-summary > i \{[^}]*width: 24px;[^}]*height: 24px;/);
   assert.match(css, /\.editor-semantic-harmony \{ margin-top: 0;/);
   assert.match(css, /\.editor-scale-controls\.is-signal \{ padding-top: 18px; \}/);

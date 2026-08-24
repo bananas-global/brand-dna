@@ -1,0 +1,7 @@
+{
+  "$schema": "./brand-dna.config.schema.json",
+  "sourceDir": "public/brand",
+  "outputDir": "dist",
+  "basePath": "/brand-dna/",
+  "siteUrl": "https://bananas-global.github.io/brand-dna/"
+}

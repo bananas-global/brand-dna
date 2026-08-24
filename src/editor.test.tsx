@@ -23,7 +23,7 @@ describe("Brand DNA editor contract", () => {
     expect(prompt).not.toContain("Desired direction");
     expect(request).toMatchObject({
       kind: "brand-dna-editor-change-request",
-      target: "public/brand/brand-dna.json",
+      target: "brand-dna/brand-dna.json",
       preserveUnlistedFields: true,
     });
   });
@@ -94,6 +94,27 @@ describe("Brand DNA editor contract", () => {
       { name: "Warning", value: "#D99A16", role: "Caution", mode: "derived" },
       { name: "Error", value: "#D94332", role: "Critical state", mode: "derived" },
     ]);
+  });
+
+  it("adds the optional extended palette to legacy drafts and preserves locally added colors", () => {
+    const source = {
+      visual: {
+        colors: [{ name: "Signal", value: "#FFCA0D", role: "Emphasis" }],
+        additionalColors: [{ name: "Source extra", value: "#A98BFF", role: "Supporting expression" }],
+      },
+    };
+    const legacy = {
+      visual: { colors: [{ name: "Signal", value: "#FFCA0D", role: "Emphasis" }] },
+    };
+    const saved = {
+      visual: {
+        ...legacy.visual,
+        additionalColors: [{ name: "Campaign blue", value: "#1473E6", role: "Seasonal campaigns" }],
+      },
+    };
+
+    expect(reconcileColorBases(legacy, source).visual.additionalColors).toEqual(source.visual.additionalColors);
+    expect(reconcileColorBases(saved, source).visual.additionalColors).toEqual(saved.visual.additionalColors);
   });
 
   it("adds new semantic color and scale defaults to an existing local draft", () => {
@@ -201,6 +222,7 @@ describe("Brand DNA editor contract", () => {
       headings: { family: "Fraunces", source: "", weight: 400 },
       body: { family: "Inter", source: "", weight: 400 },
       utility: { family: "Roboto Mono", source: "", weight: 500 },
+      additional: [],
     });
   });
 

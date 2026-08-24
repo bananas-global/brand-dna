@@ -6,9 +6,24 @@ export type BrandChange = {
   after: JsonValue;
 };
 
-export const draftStorageKey = "brand-dna-editor-draft-v3";
+export const draftStorageKey = "brand-dna-editor-draft-v4";
+
+export const getDraftStorageKey = (brandName: string, schemaVersion: string) => {
+  const brand = brandName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "brand";
+  return `${draftStorageKey}:${brand}:${schemaVersion}`;
+};
 
 type ColorBase = { name: string; value: string; role: string; mode?: "source" | "complementary" | "derived" | "custom" };
+type AdditionalColor = { name: string; value: string; role: string };
+type AdditionalFont = { name?: string; family?: string; source?: string; weight?: number; role?: string; [key: string]: unknown };
+type TypographyDraft = {
+  headings?: Record<string, unknown>;
+  body?: Record<string, unknown>;
+  utility?: Record<string, unknown>;
+  display?: Record<string, unknown>;
+  additional?: AdditionalFont[];
+  [key: string]: unknown;
+};
 type IconographyDraft = { principle?: string; library?: string; variant?: string; source?: string; [key: string]: unknown };
 type ImageryDirectionDraft = { name?: string; asset?: string; description?: string; prompt?: string; [key: string]: unknown };
 type ImageryDraft = { principle?: string; directions?: ImageryDirectionDraft[]; do?: string; avoid?: string; [key: string]: unknown };
@@ -22,10 +37,11 @@ type ColorDraft = {
   imagery?: ImageryDraft;
   visual: {
     colors: ColorBase[];
+    additionalColors?: AdditionalColor[];
     semanticColors?: Record<string, unknown>;
     colorScale?: Record<string, unknown>;
     colorScales?: Record<string, unknown>;
-    typography?: Record<string, Record<string, unknown>>;
+    typography?: TypographyDraft;
     borders?: Record<string, unknown>;
     spacing?: Record<string, unknown>;
     radii?: Record<string, unknown>;
@@ -64,15 +80,20 @@ const normalizeColorScales = (scales: Record<string, unknown>) => Object.fromEnt
 );
 
 const normalizeTypography = (
-  source: Record<string, Record<string, unknown>>,
-  saved: Record<string, Record<string, unknown>>,
-) => Object.fromEntries(["headings", "body", "utility"].map((role) => {
+  source: TypographyDraft,
+  saved: TypographyDraft,
+) => ({
+  ...Object.fromEntries(["headings", "body", "utility"].map((role) => {
+  const sourceFont = source[role] as Record<string, unknown> | undefined;
+  const savedFont = saved[role] as Record<string, unknown> | undefined;
   const legacyFont = role === "headings" ? saved.display : undefined;
-  const font = { ...(source[role] ?? {}), ...(legacyFont ?? {}), ...(saved[role] ?? {}) };
+  const font: Record<string, unknown> = { ...(sourceFont ?? {}), ...(legacyFont ?? {}), ...(savedFont ?? {}) };
   delete font.letterSpacing;
   delete font.lineHeight;
   return [role, font];
-}));
+  })),
+  additional: structuredClone(saved.additional ?? source.additional ?? []),
+});
 
 const normalizeShadows = (
   source: Record<string, unknown>,
@@ -212,6 +233,7 @@ export function reconcileColorBases<T extends ColorDraft>(draft: ColorDraft, sou
   const visual = {
     ...structuredClone(draft.visual),
     colors,
+    additionalColors: structuredClone(draft.visual.additionalColors ?? source.visual.additionalColors ?? []),
     semanticColors: {
       ...sourceSemanticColors,
       ...savedSemanticColors,
@@ -325,12 +347,13 @@ export function setAtPath<T>(source: T, path: string, value: JsonValue): T {
 export function buildChangeRequest(
   before: JsonValue,
   after: JsonValue,
+  target = "brand-dna/brand-dna.json",
 ) {
   return {
     kind: "brand-dna-editor-change-request",
     version: 1,
     createdAt: new Date().toISOString(),
-    target: "public/brand/brand-dna.json",
+    target,
     preserveUnlistedFields: true,
     changes: diffBrandDna(before, after),
   };
@@ -341,8 +364,9 @@ const printable = (value: JsonValue) => JSON.stringify(value);
 export function buildUpdatePrompt(
   before: JsonValue,
   after: JsonValue,
+  target = "brand-dna/brand-dna.json",
 ) {
-  const request = buildChangeRequest(before, after);
+  const request = buildChangeRequest(before, after, target);
   const changes = request.changes.length
     ? request.changes.map(({ path, before: oldValue, after: newValue }) =>
       `- ${path}: ${printable(oldValue)} -> ${printable(newValue)}`,
@@ -351,7 +375,7 @@ export function buildUpdatePrompt(
 
   return `Apply this Brand DNA editor change request.
 
-Target: public/brand/brand-dna.json
+Target: ${target}
 Preserve every unlisted field and every referenced asset.
 
 Exact designer decisions:

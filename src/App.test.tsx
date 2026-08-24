@@ -2,7 +2,9 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
-import { draftStorageKey } from "./editor";
+import { getDraftStorageKey } from "./editor";
+
+const draftStorageKey = getDraftStorageKey(__BRAND_DNA__.meta.brandName, __BRAND_DNA__.meta.schemaVersion);
 
 const chapterNames = [
   "About",
@@ -19,7 +21,7 @@ const chapterNames = [
 
 describe("Brand DNA site", () => {
   beforeEach(() => {
-    localStorage.removeItem(draftStorageKey);
+    localStorage.clear();
     document.querySelectorAll("link[data-brand-font]").forEach((link) => link.remove());
     window.history.replaceState(null, "", "/brand-dna/");
   });
@@ -49,6 +51,36 @@ describe("Brand DNA site", () => {
     expect(within(screen.getByRole("region", { name: "Semantic" })).getAllByRole("article").map((item) => item.querySelector("b")?.textContent)).toEqual(["Success", "Warning", "Error"]);
     expect(document.querySelector(".color-scale-formula")).not.toBeInTheDocument();
     expect(document.querySelector(".color-pairs")).not.toBeInTheDocument();
+  });
+
+  it("keeps additional brand colors optional, compact, and outside generated scales", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("tab", { name: /Color/ }));
+    expect(screen.queryByRole("region", { name: "Extended palette" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByText("Additional brand colors", { selector: "summary span" }));
+    await user.click(screen.getByRole("button", { name: "Add color" }));
+
+    expect(screen.getByRole("region", { name: "Extended palette" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Extended palette" }).querySelectorAll(".extended-swatch")).toHaveLength(1);
+    expect(screen.queryByLabelText("Color 1: 10 light tones, base color at 500, and 10 dark tones")).not.toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText("Additional color 1 name"));
+    await user.type(screen.getByLabelText("Additional color 1 name"), "Campaign blue");
+    fireEvent.change(screen.getByLabelText("Choose additional color 1"), { target: { value: "#1473e6" } });
+    await user.clear(screen.getByLabelText("Additional color 1 role"));
+    await user.type(screen.getByLabelText("Additional color 1 role"), "Seasonal campaigns");
+
+    const extendedPalette = screen.getByRole("region", { name: "Extended palette" });
+    expect(within(extendedPalette).getByText("Campaign blue")).toBeInTheDocument();
+    expect(within(extendedPalette).getByText("#1473E6")).toBeInTheDocument();
+    expect(within(extendedPalette).getByText("Seasonal campaigns")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+    expect(screen.queryByRole("region", { name: "Extended palette" })).not.toBeInTheDocument();
   });
 
   it("documents the minimum logo asset set without Logo editor controls", async () => {
@@ -81,7 +113,7 @@ describe("Brand DNA site", () => {
     expect(references).toHaveLength(2);
     expect(document.querySelectorAll(".imagery-card.specimen-card")).toHaveLength(2);
     expect(screen.getAllByText("Generation prompt")).toHaveLength(2);
-    expect(screen.getByRole("img", { name: "Focused Work visual reference" })).toHaveAttribute("src", "/brand-dna/brand/imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png");
+    expect(screen.getByRole("img", { name: "Focused Work visual reference" })).toHaveAttribute("src", "/brand-dna/imagery/21eb2840e0203c85520b0f9b5c7ee10090e56b9410e61918b7ace9886f9c6ca3.png");
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
     expect(screen.getByText("public/brand/imagery/")).toBeInTheDocument();
@@ -228,7 +260,7 @@ describe("Brand DNA site", () => {
 
     expect(screen.getByRole("link", { name: /Download JSON/ })).toHaveAttribute(
       "href",
-      "/brand-dna/brand/brand-dna.json",
+      "/brand-dna/brand-dna.json",
     );
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#content");
   });
@@ -286,7 +318,8 @@ describe("Brand DNA site", () => {
     expect(screen.queryByLabelText("Should not feel like")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Compare original" })).toHaveTextContent("Compare");
     expect(screen.getByRole("button", { name: "Copy update prompt" })).toHaveTextContent("Copy");
-    expect(screen.getByRole("button", { name: "Download changes" })).toHaveTextContent("Download");
+    expect(screen.getByRole("button", { name: "Download changes" })).toHaveTextContent("Changes");
+    expect(screen.getByRole("button", { name: "Download updated JSON" })).toHaveTextContent("JSON");
     expect(screen.getByRole("button", { name: "Reset draft" })).toHaveTextContent("Reset");
 
     fireEvent.change(screen.getByLabelText("Brand name"), { target: { value: "New name" } });

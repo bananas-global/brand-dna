@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brand-dna.dev/schema/config-1.0.json",
+  "title": "Brand DNA project configuration",
+  "type": "object",
+  "required": ["sourceDir", "outputDir", "basePath"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "sourceDir": { "type": "string", "minLength": 1 },
+    "outputDir": { "type": "string", "minLength": 1 },
+    "basePath": { "type": "string", "pattern": "^/.*/$" },
+    "siteUrl": {
+      "anyOf": [
+        { "const": "" },
+        { "type": "string", "format": "uri" }
+      ]
+    }
+  }
+}

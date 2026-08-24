@@ -30,6 +30,7 @@
       { "name": "Warning", "value": "#ED8026", "mode": "custom", "role": "Caution, attention, and pending conditions" },
       { "name": "Error", "value": "#B82350", "mode": "custom", "role": "Errors, destructive actions, and critical states" }
     ],
+    "additionalColors": [],
     "semanticColors": {
       "paper": { "source": "Signal", "stop": 100, "role": "Background: primary canvas and light surfaces" },
       "ink": { "source": "Signal", "stop": 950, "role": "Foreground: primary text, marks, and dark surfaces" },
@@ -66,7 +67,8 @@
     "typography": {
       "headings": { "family": "Space Grotesk", "source": "https://fonts.google.com/specimen/Space+Grotesk?preview.script=Latn", "weight": 700 },
       "body": { "family": "Inter", "source": "https://fonts.google.com/specimen/Inter", "weight": 400 },
-      "utility": { "family": "Space Mono", "source": "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", "weight": 400 }
+      "utility": { "family": "Space Mono", "source": "https://fonts.google.com/specimen/Space+Mono?preview.script=Latn", "weight": 400 },
+      "additional": []
     },
     "borders": { "thickness": "thin", "radius": 0, "buttonPill": false },
     "shadows": {
@@ -147,39 +149,23 @@
       "visual.typography.headings.family",
       "visual.typography.headings.source",
       "visual.typography.headings.weight",
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "proposals": [
-      "expressionPrinciples",
-      "voice",
-      "visual",
+      "visual.borders",
+      "visual.shadows",
       "imagery",
-      "motionAndSound",
+      "iconography",
       "informationAndData",
       "accessibility"
     ],
+    "proposals": [
+      "positioning.statement",
+      "positioning.primaryAudience",
+      "positioning.influencingAudience"
+    ],
     "missing": [
-      "meta.brandName",
       "essence.centralIdea",
-      "essence.purpose",
       "essence.role",
       "essence.tension",
-      "essence.promise",
-      "positioning.statement",
-      "positioning.primaryAudience"
+      "essence.promise"
     ]
   }
 }

@@ -1,30 +1,32 @@
 # Start here
 
-This template turns brand assets and a few direct design decisions into one usable Brand DNA.
+Brand DNA turns public brand assets and explicit design decisions into one source that works as a human brandbook and an AI-readable contract.
 
-## 1. Add what you have
+## Inside an existing repository
 
-Drop websites, decks, PDFs, logos, screenshots, images, or notes into `references/`. Leave the folder empty if you are starting from zero.
-
-## 2. Open the editor
-
-Install the project and start the local preview:
+Initialize the Bananas example, keep it as a working reference, then replace its decisions and assets with the client's brand:
 
 ```bash
-npm install
-npm run dev
+npx brand-dna@latest init
+npm install --save-dev brand-dna
+npx brand-dna dev
 ```
 
-Open the exact local URL printed by Vite, including `/brand-dna/`, then select **Edit** in the header.
+Open the local URL, select **Edit**, and work through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Applications.
 
-## 3. Define the Brand DNA
+Changes remain in the browser. Use **Copy** to generate an exact prompt for the AI of your choice, **Changes** to download a structured change request, or **JSON** to download the complete updated Brand DNA.
 
-The editor walks through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Applications. Changes stay in the browser while the preview updates live.
+The AI should update `brand-dna/brand-dna.json`, preserve every unlisted field and asset, update provenance, validate the file, and run the project checks.
 
-## 4. Apply the result
+```bash
+npx brand-dna validate
+npx brand-dna build
+```
 
-Use **Copy** to create an exact change prompt or **Download** to save a machine-readable change request. Send either one to Codex to update `public/brand/brand-dna.json`. The website reads that file directly.
+The default build goes to `public/brand-dna/`, where the existing website can publish it at `/brand-dna/`.
 
-Every field is treated as **evidence**, **decision**, **proposal**, or **missing**, so an AI recommendation never silently becomes a brand fact.
+## Without an existing repository
 
-The project applies only the listed changes; no backend or setup questionnaire is required.
+Create a repository from the Brand DNA GitHub template. The included GitHub Pages workflow publishes the same static brandbook automatically.
+
+No backend or setup questionnaire is required. Everything in the Brand DNA source directory is public and the Bananas identity remains the default example until it is deliberately replaced.
