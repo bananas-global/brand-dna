@@ -61,10 +61,9 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
     ["Concise", "Expressive"],
   ]);
   assert.ok(JSON.parse(sourceDna).voice.dimensions.every(({ description }) => description));
-  assert.deepEqual(JSON.parse(sourceDna).channels.map(({ name }) => name), [
+  assert.deepEqual(JSON.parse(sourceDna).useCases.map(({ name }) => name), [
     "Web pages",
     "Presentations",
-    "BI dashboards",
     "Social media cards/posts",
   ]);
   assert.deepEqual(JSON.parse(sourceDna).visual.colors, [

@@ -16,7 +16,7 @@ const chapterNames = [
   "Imagery",
   "Iconography",
   "Voice & Tone",
-  "Applications",
+  "Use cases",
 ];
 
 describe("Brand DNA site", () => {
@@ -234,7 +234,7 @@ describe("Brand DNA site", () => {
 
     const about = screen.getByRole("tab", { name: /About/ });
     const logo = screen.getByRole("tab", { name: /Logo/ });
-    const applications = screen.getByRole("tab", { name: /Applications/ });
+    const applications = screen.getByRole("tab", { name: /Use cases/ });
 
     about.focus();
     await user.keyboard("{ArrowDown}");
@@ -247,7 +247,7 @@ describe("Brand DNA site", () => {
 
     await user.click(applications);
     expect(applications).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tabpanel", { name: /Applications/ })).toBeVisible();
+    expect(screen.getByRole("tabpanel", { name: /Use cases/ })).toBeVisible();
   });
 
   it("restores a valid chapter hash and exposes a Pages-safe JSON download", async () => {
@@ -263,6 +263,16 @@ describe("Brand DNA site", () => {
       "/brand-dna/brand-dna.json",
     );
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute("href", "#content");
+  });
+
+  it("redirects the legacy applications hash to Use cases", async () => {
+    window.location.hash = "#applications";
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /Use cases/ })).toHaveAttribute("aria-selected", "true");
+    });
+    expect(window.location.hash).toBe("#use-cases");
   });
 
   it("redirects the legacy Layout hash to Borders", async () => {
@@ -586,14 +596,17 @@ describe("Brand DNA site", () => {
     expect(markers[0].getAttribute("style")).toMatch(/--opposite-color: #[0-9A-F]{6}/);
   });
 
-  it("keeps the four application formats fixed while their rules remain editable", async () => {
+  it("renders a distinct example layout for every fixed use case", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.click(screen.getByRole("tab", { name: /Applications/ }));
+    await user.click(screen.getByRole("tab", { name: /Use cases/ }));
 
-    expect(screen.getAllByText("Fixed format")).toHaveLength(4);
-    expect(screen.getAllByLabelText("Usage rule")).toHaveLength(4);
+    expect(screen.getAllByText("Fixed format")).toHaveLength(3);
+    expect(screen.getAllByLabelText("Usage rule")).toHaveLength(3);
+    expect(document.querySelector(".mini-web")).toBeInTheDocument();
+    expect(document.querySelector(".mini-presentation")).toBeInTheDocument();
+    expect(document.querySelector(".mini-social")).toBeInTheDocument();
   });
 });

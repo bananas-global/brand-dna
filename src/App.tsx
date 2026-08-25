@@ -62,7 +62,7 @@ const sections = [
   ["imagery", "Imagery"],
   ["iconography", "Iconography"],
   ["voice", "Voice & Tone"],
-  ["applications", "Applications"],
+  ["use-cases", "Use cases"],
 ] as const;
 
 type SectionId = (typeof sections)[number][0];
@@ -170,6 +170,53 @@ const Chapter = ({ id, eyebrow, title, note, className = "", children }: {
     {children}
   </section>
 );
+
+type UseCaseVariant = "web" | "presentation" | "social" | "generic";
+type BrandUseCase = BrandDna["useCases"][number];
+
+const MiniBrandMark = ({ inverse = false }: { inverse?: boolean }) => (
+  <span className={`mini-brand-mark${inverse ? " is-inverse" : ""}`}>
+    <b>DNA</b><i />
+  </span>
+);
+
+const UseCasePreview = ({ variant, channel, brandDna }: {
+  variant: UseCaseVariant;
+  channel: BrandUseCase;
+  brandDna: BrandDna;
+}) => {
+  if (variant === "web") return <div className="use-case-preview mini-web" aria-hidden="true">
+    <div className="mini-web-nav"><MiniBrandMark /><span>Work&nbsp;&nbsp; About&nbsp;&nbsp; Contact</span></div>
+    <div className="mini-web-hero">
+      <div><small>Built with one clear system</small><strong>{brandDna.essence.purpose}</strong><p>{channel.job}</p><b>Explore the work →</b></div>
+      <div className="mini-web-visual"><i /><span>{brandDna.meta.brandName}</span></div>
+    </div>
+  </div>;
+
+  if (variant === "presentation") return <div className="use-case-preview mini-presentation" aria-hidden="true">
+    <header><MiniBrandMark inverse /><span>Brand story / 01</span></header>
+    <div className="mini-slide-main"><small>One clear idea</small><strong>{brandDna.visual.signatureRule}</strong><p>{channel.job}</p></div>
+    <div className="mini-slide-meta"><i /><span>01 / 12</span></div>
+  </div>;
+
+  if (variant === "social") {
+    const direction = brandDna.imagery.directions[0];
+    return <div className="use-case-preview mini-social" aria-hidden="true">
+      <div className="mini-social-post">
+        <img src={publicAssetUrl(`imagery/${direction.asset}`)} alt="" />
+        <div className="mini-social-brand"><MiniBrandMark inverse /><span>@{brandDna.meta.brandName}</span></div>
+        <div className="mini-social-copy"><small>Make it unmistakable</small><strong>{brandDna.essence.purpose}</strong><p>Save · Share · Make</p></div>
+      </div>
+      <span className="mini-social-size">1080 × 1080</span>
+    </div>;
+  }
+
+  return <div className="use-case-preview mini-generic" aria-hidden="true">
+    <MiniBrandMark />
+    <strong>{brandDna.essence.purpose}</strong>
+    <p>{channel.job}</p>
+  </div>;
+};
 
 const LibraryIcon = ({ name, icon: Icon }: { name: string; icon: LucideIcon }) => (
   <figure className="icon-card">
@@ -631,9 +678,9 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
       <Field label="Say" value={draft.voice.say} onChange={(value) => onChange("voice.say", value)} multiline />
       <Field label="Don’t say" value={draft.voice.dontSay} onChange={(value) => onChange("voice.dontSay", value)} multiline />
     </>,
-    applications: <>{draft.channels.map((channel, index) => <div className="editor-group" key={channel.name}>
+    "use-cases": <>{draft.useCases.map((channel, index) => <div className="editor-group" key={channel.name}>
       <p className="editor-locked">{channel.name}<span>Fixed format</span></p>
-      <Field label="Usage rule" value={channel.rule} onChange={(value) => onChange(`channels[${index}].rule`, value)} multiline />
+      <Field label="Usage rule" value={channel.rule} onChange={(value) => onChange(`useCases[${index}].rule`, value)} multiline />
     </div>)}</>,
   };
 
@@ -768,10 +815,10 @@ export default function Home() {
   useEffect(() => {
     const syncWithHash = () => {
       const rawHash = window.location.hash.slice(1);
-      const hash = (rawHash === "principles" ? "about" : rawHash === "layout" ? "borders" : rawHash === "motion" ? "voice" : rawHash) as SectionId;
+      const hash = (rawHash === "principles" ? "about" : rawHash === "layout" ? "borders" : rawHash === "motion" ? "voice" : rawHash === "applications" ? "use-cases" : rawHash) as SectionId;
       if (sections.some(([id]) => id === hash)) {
         setActiveTab(hash);
-        if (rawHash === "principles" || rawHash === "layout" || rawHash === "motion") window.history.replaceState(null, "", `#${hash}`);
+        if (["principles", "layout", "motion", "applications"].includes(rawHash)) window.history.replaceState(null, "", `#${hash}`);
       }
     };
     const frame = window.requestAnimationFrame(syncWithHash);
@@ -1072,18 +1119,21 @@ export default function Home() {
           </Chapter>
         </div>
 
-        <div hidden={activeTab !== "applications"}>
-          <Chapter id="applications" eyebrow="10 / In use" title="Applications" note="One identity. Different formats and levels of intensity." className="applications-page">
-            <div className="application-grid">
-              {brandDna.channels.map((channel, index) => (
-                <article className={`application-card ${["app-web", "app-presentation", "app-bi", "app-social"][index]}`} key={channel.name}>
-                  <span>{channel.name}</span>
-                  <div className="application-art" aria-hidden="true"><i /><i /><i /></div>
-                  <p>{channel.rule}</p>
+        <div hidden={activeTab !== "use-cases"}>
+          <Chapter id="use-cases" eyebrow="10 / In use" title="Use cases" note="The same identity, demonstrated in real formats with different levels of density and intensity." className="use-cases-page">
+            <div className="use-case-list">
+              {brandDna.useCases.map((channel, index) => (
+                <article className="use-case-showcase" key={channel.name}>
+                  <div className="use-case-intro">
+                    <p><span>{String(index + 1).padStart(2, "0")}</span>{channel.name}</p>
+                    <h2>{channel.rule}</h2>
+                    <p>{channel.job}</p>
+                  </div>
+                  <UseCasePreview variant={( ["web", "presentation", "social"][index] ?? "generic") as UseCaseVariant} channel={channel} brandDna={brandDna} />
                 </article>
               ))}
             </div>
-            <div className="application-rule"><p className="field-label">Across every format</p><p>Preserve the logo, type hierarchy, palette logic, image direction, and voice. Adapt scale, density, and rhythm.</p></div>
+            <div className="use-case-rule"><p className="field-label">Across every format</p><p>Preserve the logo, type hierarchy, palette logic, image direction, and voice. Adapt scale, density, and rhythm.</p></div>
           </Chapter>
         </div>
 

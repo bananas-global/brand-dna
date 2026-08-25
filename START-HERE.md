@@ -12,7 +12,7 @@ npm install --save-dev brand-dna
 npx brand-dna dev
 ```
 
-Open the local URL, select **Edit**, and work through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Applications.
+Open the local URL, select **Edit**, and work through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Use cases.
 
 Changes remain in the browser. Use **Copy** to generate an exact prompt for the AI of your choice, **Changes** to download a structured change request, or **JSON** to download the complete updated Brand DNA.
 

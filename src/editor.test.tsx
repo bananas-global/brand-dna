@@ -255,16 +255,16 @@ describe("Brand DNA editor contract", () => {
   });
 
   it("delivers new source fields and added array entries to an existing draft", () => {
-    const base = { visual: { borders: { thickness: "thin" } }, channels: [{ name: "Web" }] };
+    const base = { visual: { borders: { thickness: "thin" } }, useCases: [{ name: "Web" }] };
     const source = {
       visual: { borders: { thickness: "thin", buttonPill: true } },
-      channels: [{ name: "Web" }, { name: "Email" }],
+      useCases: [{ name: "Web" }, { name: "Email" }],
     };
     const draft = setAtPath(structuredClone(base), "visual.borders.thickness", "bold");
 
     expect(rebaseDraft(draft, base, source)).toEqual({
       visual: { borders: { thickness: "bold", buttonPill: true } },
-      channels: [{ name: "Web" }, { name: "Email" }],
+      useCases: [{ name: "Web" }, { name: "Email" }],
     });
   });
 

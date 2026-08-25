@@ -129,16 +129,15 @@
       "Never decorate critical information at the cost of clarity."
     ]
   },
-  "channels": [
+  "useCases": [
     { "name": "Web pages", "job": "Guide, prove, and invite action across responsive screens.", "rule": "Responsive hierarchy by default." },
     { "name": "Presentations", "job": "Guide a decision through a narrative sequence.", "rule": "One idea per frame." },
-    { "name": "BI dashboards", "job": "Reduce the time between reading and decision.", "rule": "Every metric needs context." },
     { "name": "Social media cards/posts", "job": "Create relevant attention in a compact format.", "rule": "One tension, one gesture." }
   ],
   "provenance": {
     "evidence": [],
     "decisions": [
-      "channels",
+      "useCases",
       "visual.colors",
       "visual.semanticColors",
       "visual.colorScale",
