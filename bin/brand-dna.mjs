@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cp, mkdir, writeFile } from "node:fs/promises";
+import { access, cp, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
@@ -12,6 +12,15 @@ const cwd = process.cwd();
 const option = (name, fallback) => {
   const index = args.indexOf(name);
   return index >= 0 ? args[index + 1] : fallback;
+};
+
+const ensureMissing = async (target, label) => {
+  try {
+    await access(target);
+    throw new Error(`${label} already exists: ${target}`);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
 };
 
 const printHelp = () => console.log(`Brand DNA
@@ -67,7 +76,10 @@ try {
     const targetLabel = positional ?? "brand-dna";
     const target = path.resolve(cwd, targetLabel);
     const configFile = path.resolve(cwd, option("--config", "brand-dna.config.json"));
-    await mkdir(target, { recursive: false });
+    await Promise.all([
+      ensureMissing(target, "Target"),
+      ensureMissing(configFile, "Configuration file"),
+    ]);
     await cp(path.join(packageRoot, "public/brand"), target, { recursive: true, errorOnExist: true, force: false });
     await mkdir(path.join(target, "references"), { recursive: true });
     await writeFile(path.join(target, "references/.gitkeep"), "", { flag: "wx" }).catch((error) => {

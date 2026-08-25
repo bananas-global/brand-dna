@@ -25,12 +25,15 @@ test("installs the packed release and builds an isolated Brand DNA inside anothe
     assert.ok(includedPaths.includes("public/brand/brand-dna.schema.json"));
 
     const tarball = path.join(packageDirectory, filename);
+    await exec("npm", ["exec", "--yes", `--package=${tarball}`, "--", "brand-dna", "init"], {
+      cwd: repository,
+      maxBuffer: 10 * 1024 * 1024,
+    });
     await exec("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], {
       cwd: repository,
       maxBuffer: 10 * 1024 * 1024,
     });
     const cli = path.join(repository, "node_modules/brand-dna/bin/brand-dna.mjs");
-    await exec(process.execPath, [cli, "init"], { cwd: repository });
     const config = JSON.parse(await readFile(path.join(repository, "brand-dna.config.json"), "utf8"));
     const source = JSON.parse(await readFile(path.join(repository, "brand-dna/brand-dna.json"), "utf8"));
 
