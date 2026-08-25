@@ -29,12 +29,14 @@ type ImageryDirectionDraft = { name?: string; asset?: string; description?: stri
 type ImageryDraft = { principle?: string; directions?: ImageryDirectionDraft[]; do?: string; avoid?: string; [key: string]: unknown };
 type VoiceDimensionDraft = { name?: string; left?: string; right?: string; value?: number; description?: string; [key: string]: unknown };
 type VoiceDraft = { dimensions?: VoiceDimensionDraft[]; say?: string; dontSay?: string; [key: string]: unknown };
+type UseCaseDraft = { name?: string; rule?: string; [key: string]: unknown };
 type ColorDraft = {
   meta?: Record<string, unknown>;
   essence?: Record<string, unknown>;
   voice?: VoiceDraft;
   iconography?: IconographyDraft;
   imagery?: ImageryDraft;
+  useCases?: (UseCaseDraft | null)[];
   visual: {
     colors: ColorBase[];
     additionalColors?: AdditionalColor[];
@@ -214,11 +216,15 @@ export function reconcileColorBases<T extends ColorDraft>(draft: ColorDraft, sou
     ? {
       ...structuredClone(sourceVoice),
       dimensions: (sourceVoice.dimensions ?? []).map((sourceDimension) => {
-        const savedDimension = savedVoice?.dimensions?.find(({ name }) =>
-          name === sourceDimension.name || (sourceDimension.name === "Playfulness" && name === "Energy"),
-        );
+        const legacyMatch = sourceDimension.name === "Formality"
+          ? { name: "Register", invert: false }
+          : sourceDimension.name === "Volume"
+            ? { name: "Presence", invert: true }
+            : undefined;
+        const savedDimension = savedVoice?.dimensions?.find(({ name }) => name === sourceDimension.name)
+          ?? savedVoice?.dimensions?.find(({ name }) => name === legacyMatch?.name);
         const savedValue = typeof savedDimension?.value === "number"
-          ? savedDimension.name === "Energy" ? 100 - savedDimension.value : savedDimension.value
+          ? legacyMatch?.invert && savedDimension.name === legacyMatch.name ? 100 - savedDimension.value : savedDimension.value
           : undefined;
         return {
           ...structuredClone(sourceDimension),
@@ -229,6 +235,16 @@ export function reconcileColorBases<T extends ColorDraft>(draft: ColorDraft, sou
       ...(typeof savedVoice?.dontSay === "string" ? { dontSay: savedVoice.dontSay } : {}),
     }
     : undefined;
+  const useCases = source.useCases?.map((sourceUseCase, index) => {
+    const exactSavedUseCase = draft.useCases?.find((savedUseCase) => savedUseCase?.name === sourceUseCase?.name);
+    const legacySavedUseCase = draft.useCases?.[index];
+    const savedUseCase = exactSavedUseCase
+      ?? (legacySavedUseCase?.name === undefined ? legacySavedUseCase : undefined);
+    return {
+      ...structuredClone(sourceUseCase),
+      ...(typeof savedUseCase?.rule === "string" ? { rule: savedUseCase.rule } : {}),
+    };
+  });
 
   const visual = {
     ...structuredClone(draft.visual),
@@ -268,6 +284,7 @@ export function reconcileColorBases<T extends ColorDraft>(draft: ColorDraft, sou
     ...(voice ? { voice } : {}),
     ...(iconography ? { iconography } : {}),
     ...(imagery ? { imagery } : {}),
+    ...(useCases ? { useCases } : {}),
     visual,
   } as T;
   if (!("motionAndSound" in source)) {
@@ -316,12 +333,31 @@ const containerAt = (root: JsonValue, path: string) => {
 const sameValue = (left: JsonValue | undefined, right: JsonValue | undefined) =>
   diffBrandDna(left ?? null, right ?? null).length === 0;
 
+const deleteAtPath = <T>(source: T, path: string): T => {
+  const result = structuredClone(source) as Record<string, unknown>;
+  const parts = pathParts(path);
+  let cursor: Record<string, unknown> | unknown[] = result;
+
+  for (const part of parts.slice(0, -1)) {
+    const next = Array.isArray(cursor) ? cursor[Number(part)] : cursor[part];
+    if (!next || typeof next !== "object") return result as T;
+    cursor = next as Record<string, unknown> | unknown[];
+  }
+
+  const last = parts.at(-1);
+  if (last === undefined) return result as T;
+  if (Array.isArray(cursor)) cursor.splice(Number(last), 1);
+  else delete cursor[last];
+  return result as T;
+};
+
 export function rebaseDraft<T extends JsonValue>(draft: T, base: JsonValue, source: JsonValue): T {
   return diffBrandDna(base, source).reduce((result, { path, before, after }) => {
     const container = containerAt(result, path);
     if (!container || typeof container !== "object") return result;
     // The draft still carries the value it was saved against, so the newer source owns this path.
-    return sameValue(getAtPath(result, path), before) ? setAtPath(result, path, after) : result;
+    if (!sameValue(getAtPath(result, path), before)) return result;
+    return getAtPath(source, path) === undefined ? deleteAtPath(result, path) : setAtPath(result, path, after);
   }, draft);
 }
 

@@ -23,6 +23,18 @@
         "weight": { "type": "integer", "minimum": 100, "maximum": 900, "multipleOf": 100 }
       }
     },
+    "voiceDimension": {
+      "type": "object",
+      "required": ["name", "left", "right", "value", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "left": { "type": "string", "minLength": 1 },
+        "right": { "type": "string", "minLength": 1 },
+        "value": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
     "additionalFontRole": {
       "type": "object",
       "required": ["name", "family", "source", "weight", "role"],
@@ -94,18 +106,14 @@
           "type": "array",
           "minItems": 5,
           "maxItems": 5,
-          "items": {
-            "type": "object",
-            "required": ["name", "left", "right", "value", "description"],
-            "additionalProperties": false,
-            "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "left": { "type": "string", "minLength": 1 },
-              "right": { "type": "string", "minLength": 1 },
-              "value": { "type": "integer", "minimum": 0, "maximum": 100 },
-              "description": { "type": "string", "minLength": 1 }
-            }
-          }
+          "prefixItems": [
+            { "$ref": "#/$defs/voiceDimension", "properties": { "name": { "const": "Formality" }, "left": { "const": "Casual" }, "right": { "const": "Formal" } } },
+            { "$ref": "#/$defs/voiceDimension", "properties": { "name": { "const": "Volume" }, "left": { "const": "Quiet" }, "right": { "const": "Loud" } } },
+            { "$ref": "#/$defs/voiceDimension", "properties": { "name": { "const": "Expression" }, "left": { "const": "Concise" }, "right": { "const": "Expressive" } } },
+            { "$ref": "#/$defs/voiceDimension", "properties": { "name": { "const": "Complexity" }, "left": { "const": "Simple" }, "right": { "const": "Elaborate" } } },
+            { "$ref": "#/$defs/voiceDimension", "properties": { "name": { "const": "Finish" }, "left": { "const": "Rough" }, "right": { "const": "Polished" } } }
+          ],
+          "items": false
         },
         "say": { "type": "string", "minLength": 1 },
         "dontSay": { "type": "string", "minLength": 1 }

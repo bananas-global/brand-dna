@@ -54,11 +54,11 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
   assert.equal(JSON.parse(sourceDna).essence.purpose, "Great taste, awesome design, and affordable. It's bananas!");
   assert.equal("expressionPrinciples" in JSON.parse(sourceDna), false);
   assert.deepEqual(JSON.parse(sourceDna).voice.dimensions.map(({ left, right }) => [left, right]), [
-    ["Literal", "Playful"],
     ["Casual", "Formal"],
-    ["Warm", "Reserved"],
-    ["Bold", "Subtle"],
+    ["Quiet", "Loud"],
     ["Concise", "Expressive"],
+    ["Simple", "Elaborate"],
+    ["Rough", "Polished"],
   ]);
   assert.ok(JSON.parse(sourceDna).voice.dimensions.every(({ description }) => description));
   assert.deepEqual(JSON.parse(sourceDna).useCases.map(({ name }) => name), [

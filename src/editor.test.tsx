@@ -31,7 +31,7 @@ describe("Brand DNA editor contract", () => {
   it("migrates legacy voice drafts to the five-dimension model", () => {
     const source = {
       voice: {
-        dimensions: [{ name: "Playfulness", left: "Literal", right: "Playful", value: 75, description: "Use humor deliberately." }],
+        dimensions: [{ name: "Formality", left: "Casual", right: "Formal", value: 30, description: "Choose a register." }],
         say: "Use concrete verbs.",
         dontSay: "Avoid hype.",
       },
@@ -48,10 +48,16 @@ describe("Brand DNA editor contract", () => {
     expect("expressionPrinciples" in migrated).toBe(false);
   });
 
-  it("preserves the intent of the retired Playful-to-Serious axis", () => {
+  it("preserves compatible values from the retired voice dimensions", () => {
     const source = {
       voice: {
-        dimensions: [{ name: "Playfulness", left: "Literal", right: "Playful", value: 75, description: "Use humor deliberately." }],
+        dimensions: [
+          { name: "Formality", left: "Casual", right: "Formal", value: 30, description: "Choose a register." },
+          { name: "Volume", left: "Quiet", right: "Loud", value: 80, description: "Choose a volume." },
+          { name: "Expression", left: "Concise", right: "Expressive", value: 35, description: "Choose an expression." },
+          { name: "Complexity", left: "Simple", right: "Elaborate", value: 25, description: "Choose complexity." },
+          { name: "Finish", left: "Rough", right: "Polished", value: 70, description: "Choose a finish." },
+        ],
         say: "Use concrete verbs.",
         dontSay: "Avoid hype.",
       },
@@ -59,14 +65,18 @@ describe("Brand DNA editor contract", () => {
     };
     const saved = {
       voice: {
-        dimensions: [{ name: "Energy", left: "Playful", right: "Serious", value: 20 }],
+        dimensions: [
+          { name: "Register", left: "Casual", right: "Formal", value: 40 },
+          { name: "Presence", left: "Bold", right: "Subtle", value: 15 },
+          { name: "Expression", left: "Concise", right: "Expressive", value: 55 },
+        ],
         say: "Saved say.",
         dontSay: "Saved avoid.",
       },
       visual: { colors: [{ name: "Signal", value: "#FFCA0D", role: "Emphasis" }] },
     };
 
-    expect(reconcileColorBases(saved, source).voice.dimensions[0].value).toBe(80);
+    expect(reconcileColorBases(saved, source).voice.dimensions.map(({ value }) => value)).toEqual([40, 85, 55, 25, 70]);
   });
 
   it("replaces a legacy neutral palette with semantic states without discarding Signal and Accent", () => {
@@ -266,6 +276,28 @@ describe("Brand DNA editor contract", () => {
       visual: { borders: { thickness: "bold", buttonPill: true } },
       useCases: [{ name: "Web" }, { name: "Email" }],
     });
+  });
+
+  it("removes retired array entries instead of leaving null placeholders", () => {
+    const base = { useCases: [{ name: "Web" }, { name: "Dashboard" }] };
+    const source = { useCases: [{ name: "Web" }] };
+
+    expect(rebaseDraft(structuredClone(base), base, source)).toEqual(source);
+  });
+
+  it("repairs stale use-case placeholders while preserving compatible rule edits", () => {
+    const source = {
+      useCases: [{ name: "Web", rule: "Responsive by default." }],
+      visual: { colors: [{ name: "Signal", value: "#FFCA0D", role: "Emphasis" }] },
+    };
+    const saved = {
+      useCases: [{ name: "Web", rule: "Lead with one clear action." }, null],
+      visual: { colors: [{ name: "Signal", value: "#FFCA0D", role: "Emphasis" }] },
+    };
+
+    expect(reconcileColorBases(saved, source).useCases).toEqual([
+      { name: "Web", rule: "Lead with one clear action." },
+    ]);
   });
 
   it("replaces legacy layout tokens and numeric borders with semantic border decisions", () => {

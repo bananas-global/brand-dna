@@ -127,7 +127,7 @@ When a client has no existing repository or website, create a repository from th
 
 ## Develop this project
 
-Requires Node.js `>=22.13.0`.
+Requires Node.js `20.19+` or `22.12+`.
 
 ```bash
 npm install
@@ -135,6 +135,8 @@ npm run dev
 npm test
 npm run lint
 ```
+
+Maintainers can verify the exact public package before a release with `npm run release:check`. The same check runs automatically before `npm publish`.
 
 The repository itself uses `public/brand/` as its Bananas source directory and `dist/` as its standalone Pages output. No backend, account, database, or application server is required.
 

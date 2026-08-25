@@ -345,15 +345,15 @@ describe("Brand DNA site", () => {
 
     const sliders = screen.getAllByRole("slider");
     expect(sliders).toHaveLength(5);
-    expect(screen.getByRole("slider", { name: "Literal to Playful" })).toHaveValue("75");
+    expect(screen.getByRole("slider", { name: "Quiet to Loud" })).toHaveValue("87");
     expect(screen.getByLabelText("Say")).toBeInTheDocument();
     expect(screen.getByLabelText("Don’t say")).toBeInTheDocument();
     expect([...screen.getByLabelText("Voice dimensions").querySelectorAll(".voice-spectrum-row > span")].map((item) => item.textContent)).toEqual([
-      "Literal", "Playful", "Casual", "Formal", "Warm", "Reserved", "Bold", "Subtle", "Concise", "Expressive",
+      "Casual", "Formal", "Quiet", "Loud", "Concise", "Expressive", "Simple", "Elaborate", "Rough", "Polished",
     ]);
 
-    fireEvent.input(screen.getByRole("slider", { name: "Literal to Playful" }), { target: { value: "70" } });
-    expect(document.querySelector(".voice-spectrum-track i")).toHaveStyle({ left: "70%" });
+    fireEvent.input(screen.getByRole("slider", { name: "Quiet to Loud" }), { target: { value: "70" } });
+    expect(document.querySelectorAll(".voice-spectrum-track i")[1]).toHaveStyle({ left: "70%" });
   });
 
   it("uses three Google Fonts links without application-level spacing controls", async () => {

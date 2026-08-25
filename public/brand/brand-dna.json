@@ -12,11 +12,11 @@
   },
   "voice": {
     "dimensions": [
-      { "name": "Playfulness", "left": "Literal", "right": "Playful", "value": 75, "description": "Sets how literally the brand speaks versus how freely it uses humor, wordplay, metaphor, and surprise." },
-      { "name": "Register", "left": "Casual", "right": "Formal", "value": 30, "description": "Sets the level of ceremony through vocabulary, sentence structure, contractions, and forms of address." },
-      { "name": "Temperament", "left": "Warm", "right": "Reserved", "value": 25, "description": "Sets how openly the brand expresses empathy and emotion versus maintaining deliberate distance." },
-      { "name": "Presence", "left": "Bold", "right": "Subtle", "value": 20, "description": "Sets how assertively the brand states its point versus letting context and restraint carry the message." },
-      { "name": "Expression", "left": "Concise", "right": "Expressive", "value": 35, "description": "Sets how tightly the brand communicates versus allowing more detail, rhythm, and verbal texture." }
+      { "name": "Formality", "left": "Casual", "right": "Formal", "value": 0, "description": "Sets how conversational the brand sounds versus how structured and ceremonial its language becomes." },
+      { "name": "Volume", "left": "Quiet", "right": "Loud", "value": 87, "description": "Sets how softly the brand enters a conversation versus how strongly it commands attention." },
+      { "name": "Expression", "left": "Concise", "right": "Expressive", "value": 21, "description": "Sets how tightly the brand communicates versus allowing more detail, rhythm, and verbal texture." },
+      { "name": "Complexity", "left": "Simple", "right": "Elaborate", "value": 34, "description": "Sets how direct and accessible the language is versus how layered and intricate it becomes." },
+      { "name": "Finish", "left": "Rough", "right": "Polished", "value": 50, "description": "Sets how raw and spontaneous the language feels versus how refined and carefully edited it sounds." }
     ],
     "say": "Honest and truthful",
     "dontSay": "inflated claims, artificial urgency, and generic marketing superlatives."
@@ -145,6 +145,11 @@
       "essence.purpose",
       "voice.say",
       "voice.dontSay",
+      "voice.dimensions[0].value",
+      "voice.dimensions[1].value",
+      "voice.dimensions[2].value",
+      "voice.dimensions[3].value",
+      "voice.dimensions[4].value",
       "visual.typography.headings.family",
       "visual.typography.headings.source",
       "visual.typography.headings.weight",

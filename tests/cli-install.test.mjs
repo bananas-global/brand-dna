@@ -8,11 +8,28 @@ import test from "node:test";
 
 const exec = promisify(execFile);
 const projectRoot = path.resolve(new URL("../", import.meta.url).pathname);
-const cli = path.join(projectRoot, "bin/brand-dna.mjs");
 
-test("initializes, validates, and builds an isolated Brand DNA inside another repository", async () => {
+test("installs the packed release and builds an isolated Brand DNA inside another repository", async () => {
+  const packageDirectory = await mkdtemp(path.join(tmpdir(), "brand-dna-package-"));
   const repository = await mkdtemp(path.join(tmpdir(), "brand-dna-install-"));
   try {
+    const packed = await exec("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", packageDirectory], {
+      cwd: projectRoot,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const [{ filename, files }] = JSON.parse(packed.stdout);
+    const includedPaths = files.map(({ path: filePath }) => filePath);
+    assert.ok(includedPaths.includes("bin/brand-dna.mjs"));
+    assert.ok(includedPaths.includes("lib/brand-dna.mjs"));
+    assert.ok(includedPaths.includes("public/brand/brand-dna.json"));
+    assert.ok(includedPaths.includes("public/brand/brand-dna.schema.json"));
+
+    const tarball = path.join(packageDirectory, filename);
+    await exec("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", tarball], {
+      cwd: repository,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const cli = path.join(repository, "node_modules/brand-dna/bin/brand-dna.mjs");
     await exec(process.execPath, [cli, "init"], { cwd: repository });
     const config = JSON.parse(await readFile(path.join(repository, "brand-dna.config.json"), "utf8"));
     const source = JSON.parse(await readFile(path.join(repository, "brand-dna/brand-dna.json"), "utf8"));
@@ -36,6 +53,9 @@ test("initializes, validates, and builds an isolated Brand DNA inside another re
     assert.equal(JSON.parse(manifest).data, "./brand-dna.json");
     assert.deepEqual(JSON.parse(builtDna), source);
   } finally {
-    await rm(repository, { recursive: true, force: true });
+    await Promise.all([
+      rm(packageDirectory, { recursive: true, force: true }),
+      rm(repository, { recursive: true, force: true }),
+    ]);
   }
 });

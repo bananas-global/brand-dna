@@ -11,6 +11,9 @@
   "bugs": {
     "url": "https://github.com/bananas-global/brand-dna/issues"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "brand",
     "brandbook",
@@ -44,7 +47,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "vite",
@@ -53,7 +56,9 @@
     "test": "npm run build && vitest run && node --test tests/*.test.mjs",
     "lint": "eslint .",
     "validate": "node scripts/validate-brand-dna.mjs",
-    "brand-dna": "node bin/brand-dna.mjs"
+    "brand-dna": "node bin/brand-dna.mjs",
+    "release:check": "npm run lint && npm test && npm pack --dry-run",
+    "prepublishOnly": "npm run release:check"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",
