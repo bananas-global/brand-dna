@@ -12,21 +12,21 @@ npm install --save-dev brand-dna
 npx brand-dna dev
 ```
 
-Open the local URL, select **Edit**, and work through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Use cases.
+Open the URL printed in the terminal, select **Edit**, and work through About, Logo, Typography, Color, Borders, Shadows, Imagery, Iconography, Voice & Tone, and Use cases.
 
 Changes remain in the browser. Use **Copy** to generate an exact prompt for the AI of your choice, **Changes** to download a structured change request, or **JSON** to download the complete updated Brand DNA.
 
-The AI should update `brand-dna/brand-dna.json`, preserve every unlisted field and asset, update provenance, validate the file, and run the project checks.
+The AI should update `brand-dna/brand-dna.json`, preserve every unlisted field and asset, update provenance, validate the file, and run the project checks. If you download the complete JSON instead, replace that file manually.
 
 ```bash
 npx brand-dna validate
 npx brand-dna build
 ```
 
-The default build goes to `public/brand-dna/`, where the existing website can publish it at `/brand-dna/`.
+Before publishing, set `siteUrl` in `brand-dna.config.json` to the final public URL. The default build goes to `public/brand-dna/`, where the existing website can publish it at `/brand-dna/`. Make the website build run the Brand DNA build first, then commit `brand-dna/` and `brand-dna.config.json`.
 
 ## Without an existing repository
 
-Create a repository from the Brand DNA GitHub template. The included GitHub Pages workflow publishes the same static brandbook automatically.
+Select **Use this template** on the Brand DNA repository and create a public repository. In **Settings → Pages**, choose **GitHub Actions** as the source. The included workflow then publishes the same static brandbook automatically.
 
 No backend or setup questionnaire is required. Everything in the Brand DNA source directory is public and the Bananas identity remains the default example until it is deliberately replaced.

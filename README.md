@@ -9,15 +9,17 @@ brand-dna.json + assets → public brandbook for people
                         → stable JSON + manifest for AI agents
 ```
 
-The starter ships with the Bananas studio identity. It is a real working example, not an empty questionnaire: every value and asset can be replaced, while the minimum system remains useful from the first run.
+The starter ships with the Bananas studio identity. It is a real working example, not an empty questionnaire: every brand-specific decision and asset can be replaced, while the opinionated core structure keeps the system useful from the first run.
 
 Live example: [bananas-global.github.io/brand-dna](https://bananas-global.github.io/brand-dna/)
+
+npm package: [npmjs.com/package/brand-dna](https://www.npmjs.com/package/brand-dna)
 
 ## What it enables
 
 The minimum Brand DNA covers the decisions needed to create presentations, campaign materials, social posts, documents, web pages, data interfaces, and new imagery with a recognizable look and feel:
 
-- purpose, positioning, audiences, voice, and channel rules;
+- purpose, positioning, audiences, voice, and use-case rules;
 - a required core palette plus optional additional colors;
 - three required type roles plus optional additional typefaces;
 - semantic colors, deterministic scales, borders, radius, and shadows;
@@ -28,13 +30,15 @@ The format is opinionated at the core and extensible at the edges. Extra colors 
 
 ## Add it to an existing repository
 
-Brand DNA is designed to live inside the repository a client already has. After the npm package is published:
+Brand DNA is designed to live inside the repository a client already has. From the root of that repository, run:
 
 ```bash
 npx brand-dna@latest init
 npm install --save-dev brand-dna
 npx brand-dna dev
 ```
+
+The first command copies the Bananas starter. The second pins the Brand DNA toolchain as a development dependency. The third starts the local editor and prints its URL.
 
 `init` creates:
 
@@ -51,7 +55,7 @@ brand-dna/
 brand-dna.config.json
 ```
 
-The package is a development dependency so the local editor and CI use the same version. `npx brand-dna@latest init` is only the one-time initializer.
+The package is a development dependency so the local editor and CI use the same version. `npx brand-dna@latest init` is only the one-time initializer. It refuses to overwrite an existing `brand-dna/` directory or `brand-dna.config.json` file.
 
 Useful scripts for the host repository:
 
@@ -65,7 +69,7 @@ Useful scripts for the host repository:
 }
 ```
 
-Run `brand-dna build` before the host website build. By default it writes a complete static brandbook to `public/brand-dna/`, ready for frameworks that copy their public directory into production.
+Run `npm run brand-dna:build` before the host website build. By default it writes a complete static brandbook to `public/brand-dna/`, ready for frameworks that copy their public directory into production.
 
 ## Public contract
 
@@ -98,11 +102,22 @@ The editor can:
 
 The generated prompt tells the AI which file to update, preserves unlisted decisions and assets, updates provenance, validates the schema, and runs project checks. Draft storage is namespaced by brand and schema version so different clients do not share browser state.
 
+### First-use workflow
+
+1. Start the local editor with `npm run brand-dna:dev` and open the printed URL.
+2. Work through the guidelines in **Edit** mode.
+3. Use **Copy** and give the generated prompt to an AI with access to the repository, or use **JSON** and replace `brand-dna/brand-dna.json` manually.
+4. Replace the example assets in `brand-dna/` without changing referenced filenames unless the JSON is updated too.
+5. Set `siteUrl` in `brand-dna.config.json` to the final public `/brand-dna/` URL.
+6. Run `npm run brand-dna:validate` and `npm run brand-dna:build`.
+7. Make the host website build run `npm run brand-dna:build` first, then commit the source directory and configuration file.
+8. Publish the host website. People and AI agents can now use the same public Brand DNA.
+
 ## Commands
 
 ```bash
 brand-dna init [directory]  # copy the Bananas starter into a repository
-brand-dna dev               # open the brandbook and editor locally
+brand-dna dev               # start the local brandbook and editor
 brand-dna validate          # validate schema, provenance, and referenced assets
 brand-dna build             # build the static public brandbook
 ```
@@ -119,11 +134,11 @@ Configuration lives in `brand-dna.config.json`:
 }
 ```
 
-`siteUrl` can remain empty during local setup. It controls canonical and social metadata when published.
+`siteUrl` can remain empty during local setup. Set it before publishing so canonical and social metadata point to the final public URL.
 
 ## Standalone repository
 
-When a client has no existing repository or website, create a repository from this project and enable GitHub Pages. The included workflow validates, tests, builds, and deploys the static brandbook on every push to `main`.
+When a client has no existing repository or website, select **Use this template** on GitHub and create a public repository. In **Settings → Pages**, choose **GitHub Actions** as the source. The included workflow validates, tests, builds, and deploys the static brandbook on every push to `main`.
 
 ## Develop this project
 
