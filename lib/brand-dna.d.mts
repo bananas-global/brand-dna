@@ -25,4 +25,7 @@ export function readJson(file: string): Promise<unknown>;
 export function loadBrandProject(options?: { cwd?: string; configPath?: string }): Promise<BrandProject>;
 export function validateBrandProject(project: BrandProject): Promise<string[]>;
 export function createPublicManifest(project: BrandProject): Record<string, unknown>;
+export function createDesignMarkdown(project: BrandProject): string;
+export function createBrandStylesheet(project: BrandProject): string;
+export function createEvalScenarios(project: BrandProject): Record<string, unknown>;
 export const packageRoot: string;

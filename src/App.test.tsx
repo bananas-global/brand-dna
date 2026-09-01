@@ -605,6 +605,9 @@ describe("Brand DNA site", () => {
 
     expect(screen.getAllByText("Fixed format")).toHaveLength(3);
     expect(screen.getAllByLabelText("Usage rule")).toHaveLength(3);
+    expect(screen.getByLabelText("Priority order")).toHaveValue(__BRAND_DNA__.agentGuidance.priorities.join("\n"));
+    expect(screen.getByLabelText("Composition rules")).toHaveValue(__BRAND_DNA__.agentGuidance.compositionRules.join("\n"));
+    expect(screen.getByLabelText("Patterns to reject")).toHaveValue(__BRAND_DNA__.agentGuidance.avoidPatterns.join("\n"));
     expect(document.querySelector(".mini-web")).toBeInTheDocument();
     expect(document.querySelector(".mini-presentation")).toBeInTheDocument();
     expect(document.querySelector(".mini-social")).toBeInTheDocument();

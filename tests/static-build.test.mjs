@@ -25,6 +25,9 @@ test("copies every public asset and emits self-hosted fonts", async () => {
     access(new URL("brand-dna.json", distRoot)),
     access(new URL("brand-dna.schema.json", distRoot)),
     access(new URL("manifest.json", distRoot)),
+    access(new URL("design.md", distRoot)),
+    access(new URL("brand.css", distRoot)),
+    access(new URL("evals/scenarios.json", distRoot)),
     access(new URL("logo/default.svg", distRoot)),
     access(new URL("logo/icon.svg", distRoot)),
     access(new URL("logo/wordmark.svg", distRoot)),
@@ -118,6 +121,26 @@ test("keeps one canonical Brand DNA file and a browser-guided setup", async () =
   assert.equal("spacing" in JSON.parse(sourceDna).visual, false);
   assert.equal("radii" in JSON.parse(sourceDna).visual, false);
   assert.equal("shadows" in JSON.parse(sourceDna).visual, true);
+});
+
+test("publishes generated agent guidance, CSS primitives, and eval discovery", async () => {
+  const [manifestSource, guidance, stylesheet, scenariosSource] = await Promise.all([
+    readFile(new URL("manifest.json", distRoot), "utf8"),
+    readFile(new URL("design.md", distRoot), "utf8"),
+    readFile(new URL("brand.css", distRoot), "utf8"),
+    readFile(new URL("evals/scenarios.json", distRoot), "utf8"),
+  ]);
+  const manifest = JSON.parse(manifestSource);
+  const scenarios = JSON.parse(scenariosSource);
+
+  assert.equal(manifest.guidance, "./design.md");
+  assert.equal(manifest.stylesheet, "./brand.css");
+  assert.equal(manifest.evals, "./evals/scenarios.json");
+  assert.match(guidance, /compiled from \[brand-dna\.json\]/i);
+  assert.match(guidance, /Reject generated-design reflexes/);
+  assert.match(stylesheet, /--brand-signal: #FFCA0D/);
+  assert.match(stylesheet, /\.bd-table-wrap/);
+  assert.deepEqual(scenarios.scenarios.map(({ id }) => id), ["web-pages", "presentations", "social-media-cards-posts"]);
 });
 
 test("keeps the application shell independent from Brand DNA colors", async () => {

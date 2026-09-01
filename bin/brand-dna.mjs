@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { loadBrandProject, packageRoot, validateBrandProject } from "../lib/brand-dna.mjs";
+import { runEvalDirectory } from "../lib/eval.mjs";
 
 const require = createRequire(import.meta.url);
 const [command = "help", ...args] = process.argv.slice(2);
@@ -30,6 +31,7 @@ Usage:
   brand-dna dev                     Open the local brandbook and prompt editor
   brand-dna validate                Validate the Brand DNA and referenced assets
   brand-dna build                   Build the public brandbook
+  brand-dna eval [directory]        Check generated HTML against Brand DNA
 
 Options:
   --config <file>                   Configuration file (default: brand-dna.config.json)
@@ -95,7 +97,7 @@ try {
     await writeFile(configFile, `${JSON.stringify(config, null, 2)}\n`, { flag: "wx" });
     console.log(`Brand DNA initialized in ${path.relative(cwd, target) || "."}`);
     console.log("Next: install brand-dna as a dev dependency, then run `brand-dna dev`.");
-  } else if (["validate", "dev", "build"].includes(command)) {
+  } else if (["validate", "dev", "build", "eval"].includes(command)) {
     const project = await loadConfiguredProject();
     const errors = await validateBrandProject(project);
     if (errors.length) {
@@ -104,6 +106,17 @@ try {
       process.exitCode = 1;
     } else if (command === "validate") {
       console.log(`Brand DNA is valid: ${project.sourceLabel}/brand-dna.json`);
+    } else if (command === "eval") {
+      const optionValues = new Set([option("--base"), option("--output"), option("--site-url"), option("--config")].filter(Boolean));
+      const directoryArg = args.find((arg) => !arg.startsWith("--") && !optionValues.has(arg));
+      const directory = path.resolve(cwd, directoryArg ?? "brand-dna-evals");
+      await mkdir(directory, { recursive: true });
+      const report = await runEvalDirectory(project, directory);
+      const reportFile = path.join(directory, "eval-report.json");
+      await writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+      console.log(`Brand DNA eval: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.missing} missing, ${report.summary.warnings} warnings.`);
+      console.log(`Report: ${path.relative(cwd, reportFile)}`);
+      if (!report.passed) process.exitCode = 1;
     } else {
       await runVite(command, project);
     }

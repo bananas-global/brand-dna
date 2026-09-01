@@ -38,8 +38,14 @@ const linkedColorScales = Object.fromEntries(
   ["Accent", "Success", "Warning", "Error"].map((name) => [name, { mode: "linked" }]),
 ) as Record<string, ColorScaleLink>;
 const embeddedBrandDna = __BRAND_DNA__ as BrandDna;
+const fallbackAgentGuidance: BrandDna["agentGuidance"] = {
+  priorities: ["Preserve supplied facts and constraints.", "Make the reader's job clear before styling."],
+  compositionRules: ["Give each artifact one dominant idea and an obvious reading path."],
+  avoidPatterns: ["Generic dashboard reflex — do not turn every artifact into interchangeable cards."],
+};
 const initialBrandDna: BrandDna = {
   ...embeddedBrandDna,
+  agentGuidance: embeddedBrandDna.agentGuidance ?? fallbackAgentGuidance,
   visual: {
     ...embeddedBrandDna.visual,
     additionalColors: embeddedBrandDna.visual.additionalColors ?? [],
@@ -678,10 +684,18 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
       <Field label="Say" value={draft.voice.say} onChange={(value) => onChange("voice.say", value)} multiline />
       <Field label="Don’t say" value={draft.voice.dontSay} onChange={(value) => onChange("voice.dontSay", value)} multiline />
     </>,
-    "use-cases": <>{draft.useCases.map((channel, index) => <div className="editor-group" key={channel.name}>
-      <p className="editor-locked">{channel.name}<span>Fixed format</span></p>
-      <Field label="Usage rule" value={channel.rule} onChange={(value) => onChange(`useCases[${index}].rule`, value)} multiline />
-    </div>)}</>,
+    "use-cases": <>
+      {draft.useCases.map((channel, index) => <div className="editor-group" key={channel.name}>
+        <p className="editor-locked">{channel.name}<span>Fixed format</span></p>
+        <Field label="Usage rule" value={channel.rule} onChange={(value) => onChange(`useCases[${index}].rule`, value)} multiline />
+      </div>)}
+      <div className="editor-group">
+        <p className="editor-locked">Agent guidance<span>One rule per line</span></p>
+        <Field label="Priority order" value={draft.agentGuidance.priorities.join("\n")} onChange={(value) => onChange("agentGuidance.priorities", value.split("\n").map((item) => item.trim()).filter(Boolean))} multiline />
+        <Field label="Composition rules" value={draft.agentGuidance.compositionRules.join("\n")} onChange={(value) => onChange("agentGuidance.compositionRules", value.split("\n").map((item) => item.trim()).filter(Boolean))} multiline />
+        <Field label="Patterns to reject" value={draft.agentGuidance.avoidPatterns.join("\n")} onChange={(value) => onChange("agentGuidance.avoidPatterns", value.split("\n").map((item) => item.trim()).filter(Boolean))} multiline />
+      </div>
+    </>,
   };
 
   return <aside className="editor-panel" aria-label="Brand editor">

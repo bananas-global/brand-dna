@@ -6,7 +6,8 @@ Brand DNA keeps one public set of brand decisions and assets behind two views:
 
 ```text
 brand-dna.json + assets → public brandbook for people
-                        → stable JSON + manifest for AI agents
+                        → stable JSON + generated design.md for AI agents
+                        → generated brand.css for repeatable mechanics
 ```
 
 The starter ships with the Bananas studio identity. It is a real working example, not an empty questionnaire: every brand-specific decision and asset can be replaced, while the opinionated core structure keeps the system useful from the first run.
@@ -80,12 +81,15 @@ The default deployment exposes:
 /brand-dna/brand-dna.json      canonical machine-readable data
 /brand-dna/brand-dna.schema.json
 /brand-dna/manifest.json       discovery map for AI agents
+/brand-dna/design.md           compiled guidance for AI agents
+/brand-dna/brand.css           stable tokens and layout primitives
+/brand-dna/evals/scenarios.json
 /brand-dna/logo/
 /brand-dna/imagery/
 /brand-dna/references/
 ```
 
-The HTML declares the canonical JSON and manifest with alternate links. Humans and AI agents consume the same versioned source; the brandbook contains no duplicate brand content.
+The HTML declares the canonical JSON, manifest, and generated guidance with alternate links. Humans and AI agents consume the same versioned source. `design.md`, `brand.css`, and the eval scenarios are compiled artifacts; `brand-dna.json` remains the only source of brand content.
 
 Everything inside the Brand DNA source directory is treated as public branding material.
 
@@ -120,7 +124,27 @@ brand-dna init [directory]  # copy the Bananas starter into a repository
 brand-dna dev               # start the local brandbook and editor
 brand-dna validate          # validate schema, provenance, and referenced assets
 brand-dna build             # build the static public brandbook
+brand-dna eval [directory]  # check first-attempt HTML artifacts
 ```
+
+## Agent guidance and portable CSS
+
+Every build compiles two agent-facing artifacts from the canonical JSON:
+
+- `design.md` turns structured brand decisions into an execution order, composition guidance, named anti-patterns, asset rules, and a documented CSS API;
+- `brand.css` publishes stable `--brand-*` tokens and `bd-*` primitives for layout, typography, evidence, tables, surfaces, and actions.
+
+Do not edit either output directly. Change `brand-dna.json` in the editor or repository and rebuild.
+
+## Evaluation loop
+
+The build also publishes one fixed scenario per Brand DNA use case in `evals/scenarios.json`. Generate the first attempt for each scenario and save it using the scenario's `expectedFile` inside an evaluation directory. Then run:
+
+```bash
+npx brand-dna eval brand-dna-evals
+```
+
+The command writes `eval-report.json` and checks deterministic failures such as a missing responsive viewport, language, main landmark, primary heading, Brand DNA stylesheet, or image alternatives. For a reproducible run, also save `<scenario>.run.json` with `model` and `guidanceVersion`, plus the first-attempt screenshot as `<scenario>.png`. Warnings keep subjective review human-owned; errors fail the command.
 
 Configuration lives in `brand-dna.config.json`:
 

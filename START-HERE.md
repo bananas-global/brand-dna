@@ -23,6 +23,10 @@ npx brand-dna validate
 npx brand-dna build
 ```
 
+The build publishes `design.md` for agent guidance, `brand.css` for reusable mechanics, and `evals/scenarios.json` for fixed comparisons. These files are generated from `brand-dna.json`; do not edit them directly.
+
+To evaluate generated HTML, save one first-attempt file for each published scenario and run `npx brand-dna eval brand-dna-evals`. Keep the generated report, model metadata, viewport, and screenshot together so later guidance changes can be compared against the same inputs.
+
 Before publishing, set `siteUrl` in `brand-dna.config.json` to the final public URL. The default build goes to `public/brand-dna/`, where the existing website can publish it at `/brand-dna/`. Make the website build run the Brand DNA build first, then commit `brand-dna/` and `brand-dna.config.json`.
 
 ## Without an existing repository

@@ -36,6 +36,7 @@ type ColorDraft = {
   voice?: VoiceDraft;
   iconography?: IconographyDraft;
   imagery?: ImageryDraft;
+  agentGuidance?: Record<string, unknown>;
   useCases?: (UseCaseDraft | null)[];
   visual: {
     colors: ColorBase[];
@@ -284,6 +285,7 @@ export function reconcileColorBases<T extends ColorDraft>(draft: ColorDraft, sou
     ...(voice ? { voice } : {}),
     ...(iconography ? { iconography } : {}),
     ...(imagery ? { imagery } : {}),
+    agentGuidance: structuredClone(draft.agentGuidance ?? source.agentGuidance ?? {}),
     ...(useCases ? { useCases } : {}),
     visual,
   } as T;

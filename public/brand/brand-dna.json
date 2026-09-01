@@ -129,6 +129,27 @@
       "Never decorate critical information at the cost of clarity."
     ]
   },
+  "agentGuidance": {
+    "priorities": [
+      "Preserve supplied facts, constraints, qualifiers, and accessibility requirements.",
+      "Make the reader's job and the strongest supported message clear before styling.",
+      "Use the published Brand DNA assets, tokens, and primitives before inventing new ones.",
+      "Adapt composition to the material while preserving a recognizable brand system."
+    ],
+    "compositionRules": [
+      "Give each artifact one dominant idea and an obvious reading path.",
+      "Use hierarchy, alignment, and spacing before adding containers or decoration.",
+      "Keep exact evidence, units, sources, and caveats close to the claims they qualify.",
+      "Make responsive behavior part of the composition, not a cleanup step."
+    ],
+    "avoidPatterns": [
+      "Generic dashboard reflex — do not turn every artifact into a grid of interchangeable cards.",
+      "Decoration as evidence — do not use charts, icons, gradients, or surfaces without an informational job.",
+      "Equal-weight hierarchy — do not give every section, metric, or action the same visual emphasis.",
+      "Brand by color alone — preserve typography, composition, imagery, voice, and asset rules together.",
+      "Unsupported confidence — do not invent claims, urgency, certainty, proof, or calls to action."
+    ]
+  },
   "useCases": [
     { "name": "Web pages", "job": "Guide, prove, and invite action across responsive screens.", "rule": "Responsive hierarchy by default." },
     { "name": "Presentations", "job": "Guide a decision through a narrative sequence.", "rule": "One idea per frame." },
@@ -158,7 +179,8 @@
       "imagery",
       "iconography",
       "informationAndData",
-      "accessibility"
+      "accessibility",
+      "agentGuidance"
     ],
     "proposals": [
       "positioning.statement",

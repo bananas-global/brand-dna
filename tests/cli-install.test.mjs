@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -12,9 +12,11 @@ const projectRoot = path.resolve(new URL("../", import.meta.url).pathname);
 test("installs the packed release and builds an isolated Brand DNA inside another repository", async () => {
   const packageDirectory = await mkdtemp(path.join(tmpdir(), "brand-dna-package-"));
   const repository = await mkdtemp(path.join(tmpdir(), "brand-dna-install-"));
+  const packEnvironment = { ...process.env, npm_config_cache: path.join(packageDirectory, "npm-cache") };
   try {
     const packed = await exec("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", packageDirectory], {
       cwd: projectRoot,
+      env: packEnvironment,
       maxBuffer: 10 * 1024 * 1024,
     });
     const [{ filename, files }] = JSON.parse(packed.stdout);
@@ -46,15 +48,34 @@ test("installs the packed release and builds an isolated Brand DNA inside anothe
 
     await exec(process.execPath, [cli, "build"], { cwd: repository, maxBuffer: 10 * 1024 * 1024 });
     const outputRoot = path.join(repository, "public/brand-dna");
-    const [html, manifest, builtDna] = await Promise.all([
+    const [html, manifest, builtDna, guidance, stylesheet, scenarios] = await Promise.all([
       readFile(path.join(outputRoot, "index.html"), "utf8"),
       readFile(path.join(outputRoot, "manifest.json"), "utf8"),
       readFile(path.join(outputRoot, "brand-dna.json"), "utf8"),
+      readFile(path.join(outputRoot, "design.md"), "utf8"),
+      readFile(path.join(outputRoot, "brand.css"), "utf8"),
+      readFile(path.join(outputRoot, "evals/scenarios.json"), "utf8"),
     ]);
 
     assert.match(html, /<title>bananas — Brand DNA<\/title>/);
     assert.equal(JSON.parse(manifest).data, "./brand-dna.json");
+    assert.equal(JSON.parse(manifest).guidance, "./design.md");
+    assert.match(guidance, /Build like bananas/);
+    assert.match(stylesheet, /\.bd-page/);
+    assert.equal(JSON.parse(scenarios).scenarios.length, 3);
     assert.deepEqual(JSON.parse(builtDna), source);
+
+    const evaluationDirectory = path.join(repository, "brand-dna-evals");
+    await mkdir(evaluationDirectory);
+    const artifact = "<!doctype html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width\"><link rel=\"stylesheet\" href=\"brand.css\"></head><body class=\"bd-page\"><main><h1>Test</h1></main></body></html>";
+    for (const { id, expectedFile } of JSON.parse(scenarios).scenarios) {
+      await writeFile(path.join(evaluationDirectory, expectedFile), artifact);
+      await writeFile(path.join(evaluationDirectory, `${id}.run.json`), JSON.stringify({ model: "test-model", guidanceVersion: source.meta.version }));
+      await writeFile(path.join(evaluationDirectory, `${id}.png`), "fixture");
+    }
+    const evaluation = await exec(process.execPath, [cli, "eval", evaluationDirectory], { cwd: repository });
+    assert.match(evaluation.stdout, /3 passed, 0 failed, 0 missing/);
+    assert.equal(JSON.parse(await readFile(path.join(evaluationDirectory, "eval-report.json"), "utf8")).passed, true);
   } finally {
     await Promise.all([
       rm(packageDirectory, { recursive: true, force: true }),
