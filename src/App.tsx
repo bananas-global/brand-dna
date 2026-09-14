@@ -24,7 +24,10 @@ type AdditionalBrandFont = { name: string; family: string; source: string; weigh
 type EmbeddedBrandDna = typeof __BRAND_DNA__;
 type ColorScaleSettings = EmbeddedBrandDna["visual"]["colorScale"];
 type ColorScaleLink = { mode: "linked" | "custom"; settings?: ColorScaleSettings };
+type CustomSection = { id: string; menuLabel: string; title: string; description: string; link: string; image?: string };
+const safeSectionLink = (value: string) => /^(https:\/\/[^\s]+|\/(?!\/)[^\s]*)$/.test(value) && !value.includes("\\") ? value : undefined;
 type BrandDna = Omit<EmbeddedBrandDna, "visual"> & {
+  customSections?: CustomSection[];
   visual: Omit<EmbeddedBrandDna["visual"], "colors" | "additionalColors" | "colorScales" | "typography"> & {
     colors: BrandColor[];
     additionalColors: AdditionalBrandColor[];
@@ -71,7 +74,7 @@ const sections = [
   ["use-cases", "Use cases"],
 ] as const;
 
-type SectionId = (typeof sections)[number][0];
+type SectionId = string;
 
 const borderThicknessValues = { thin: 1, medium: 2, bold: 4 } as const;
 type BorderThickness = keyof typeof borderThicknessValues;
@@ -450,7 +453,9 @@ const getShadowCss = (
 };
 
 function EditorPanel({ section, draft, changeCount, comparing, status, onChange, onCompare, onCopy, onDownload, onDownloadJson, onReset, onClose }: EditorPanelProps) {
-  const sectionLabel = sections.find(([id]) => id === section)?.[1];
+  const customIndex = (draft.customSections ?? []).findIndex((item) => item.id === section);
+  const customSection = draft.customSections?.[customIndex];
+  const sectionLabel = customSection?.menuLabel ?? sections.find(([id]) => id === section)?.[1];
   const signal = draft.visual.colors.find((color) => color.name === "Signal") ?? draft.visual.colors[0];
   const border = draft.visual.semanticColors.border;
   const utilityControls = <div className="editor-semantic-colors">
@@ -462,6 +467,19 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
 
   const controls: Record<SectionId, ReactNode> = {
     about: <>
+      <details className="editor-additional-colors"><summary><span>Additional sections</span><output>{draft.customSections?.length ?? 0}</output></summary>
+        <div className="editor-additional-body">
+        {(draft.customSections ?? []).map((item, index) => <div className="editor-additional-heading" key={item.id}>
+          <b>{item.menuLabel}</b>
+          <button type="button" onClick={() => onChange("customSections", (draft.customSections ?? []).filter((_, i) => i !== index))}>Remove {item.menuLabel}</button>
+        </div>)}
+        <button className="editor-add-color" type="button" onClick={() => {
+          let number = 1;
+          while (draft.customSections?.some((item) => item.id === `extra-${number}`)) number++;
+          onChange("customSections", [...(draft.customSections ?? []), { id: `extra-${number}`, menuLabel: `Section ${number}`, title: `Section ${number}`, description: "Describe this brand resource.", link: "/" }]);
+        }}>Add section</button>
+        </div>
+      </details>
       <Field label="Brand name" value={draft.meta.brandName} onChange={(value) => onChange("meta.brandName", value)} />
       <Field label="Purpose" value={draft.essence.purpose} onChange={(value) => onChange("essence.purpose", value)} multiline />
     </>,
@@ -706,7 +724,14 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
     <div className="editor-scroll">
       {section !== "logo" && <section className="editor-controls" aria-labelledby="controls-heading">
         <h2 id="controls-heading">{sectionLabel}</h2>
-        {controls[section]}
+        {customSection ? <>
+          <p className="editor-locked">{customSection.id}<span>Stable identifier</span></p>
+          {(["menuLabel", "title", "description", "link", "image"] as const).map((field) => <Field key={field} label={{ menuLabel: "Menu label", title: "Title", description: "Description", link: "Link", image: "Image (optional, references/...)" }[field]} value={customSection[field] ?? ""} multiline={field === "description"} onChange={(value) => {
+            const next = { ...customSection, [field]: value };
+            if (field === "image" && !value) delete next.image;
+            onChange(`customSections[${customIndex}]`, next);
+          }} />)}
+        </> : controls[section]}
       </section>}
     </div>
     <div className="editor-actions">
@@ -721,7 +746,7 @@ function EditorPanel({ section, draft, changeCount, comparing, status, onChange,
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<SectionId>("about");
+  const [selectedTab, setActiveTab] = useState<SectionId>("about");
   const [isEditing, setIsEditing] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [status, setStatus] = useState("");
@@ -741,6 +766,8 @@ export default function Home() {
   });
   const changes = useMemo(() => diffBrandDna(initialBrandDna, draft), [draft]);
   const brandDna = isEditing && !comparing ? draft : initialBrandDna;
+  const navigationSections = useMemo(() => [...sections, ...(brandDna.customSections ?? []).map((item): [string, string] => [item.id, item.menuLabel])], [brandDna.customSections]);
+  const activeTab = navigationSections.some(([id]) => id === selectedTab) ? selectedTab : "about";
   const typography = brandDna.visual.typography;
   const borderDemoPadding = 16;
   const borderThicknessName = brandDna.visual.borders.thickness as BorderThickness;
@@ -830,7 +857,7 @@ export default function Home() {
     const syncWithHash = () => {
       const rawHash = window.location.hash.slice(1);
       const hash = (rawHash === "principles" ? "about" : rawHash === "layout" ? "borders" : rawHash === "motion" ? "voice" : rawHash === "applications" ? "use-cases" : rawHash) as SectionId;
-      if (sections.some(([id]) => id === hash)) {
+      if (navigationSections.some(([id]) => id === hash)) {
         setActiveTab(hash);
         if (["principles", "layout", "motion", "applications"].includes(rawHash)) window.history.replaceState(null, "", `#${hash}`);
       }
@@ -841,7 +868,13 @@ export default function Home() {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("hashchange", syncWithHash);
     };
-  }, []);
+  }, [navigationSections]);
+
+  useEffect(() => {
+    if (!navigationSections.some(([id]) => id === selectedTab)) {
+      window.history.replaceState(null, "", "#about");
+    }
+  }, [selectedTab, navigationSections]);
 
   const selectTab = (id: SectionId) => {
     setActiveTab(id);
@@ -850,7 +883,7 @@ export default function Home() {
   };
 
   const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const last = sections.length - 1;
+    const last = navigationSections.length - 1;
     let next = index;
     if (event.key === "ArrowDown" || event.key === "ArrowRight") next = index === last ? 0 : index + 1;
     else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = index === 0 ? last : index - 1;
@@ -859,7 +892,7 @@ export default function Home() {
     else return;
 
     event.preventDefault();
-    const [id] = sections[next];
+    const [id] = navigationSections[next];
     selectTab(id);
     document.getElementById(`tab-${id}`)?.focus();
   };
@@ -927,7 +960,7 @@ export default function Home() {
         <p className="rail-label">Guidelines</p>
         <nav aria-label="Brand guideline sections">
           <ol role="tablist" aria-orientation="vertical">
-            {sections.map(([id, label], index) => (
+            {navigationSections.map(([id, label], index) => (
               <li key={id}>
                 <button
                   id={`tab-${id}`}
@@ -1150,6 +1183,13 @@ export default function Home() {
             <div className="use-case-rule"><p className="field-label">Across every format</p><p>Preserve the logo, type hierarchy, palette logic, image direction, and voice. Adapt scale, density, and rhythm.</p></div>
           </Chapter>
         </div>
+
+        {(brandDna.customSections ?? []).map((item, index) => <div key={item.id} hidden={activeTab !== item.id}>
+          <Chapter id={item.id} eyebrow={`${String(sections.length + index + 1).padStart(2, "0")} / ${item.menuLabel}`} title={item.title} note={item.description} className="custom-section-page">
+            {item.image && /^references\/(?!.*\.\.)[A-Za-z0-9_./-]+\.(avif|jpe?g|png|svg|webp)$/.test(item.image) && <img className="custom-section-image" src={publicAssetUrl(item.image)} alt={item.title} />}
+            {safeSectionLink(item.link) && <a className="custom-section-link" href={safeSectionLink(item.link)}>{item.title} <ArrowRight aria-hidden="true" /></a>}
+          </Chapter>
+        </div>)}
 
         <footer>
           <div className="footer-mark"><span>DNA</span><i /></div>

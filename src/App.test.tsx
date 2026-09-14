@@ -39,6 +39,36 @@ describe("Brand DNA site", () => {
     expect(screen.queryByRole("tab", { name: /Motion/i })).not.toBeInTheDocument();
   });
 
+  it("adds, edits, persists and removes independent custom sections", async () => {
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByText("Additional sections"));
+    await user.click(screen.getByRole("button", { name: "Add section" }));
+    await user.click(screen.getByRole("button", { name: "Add section" }));
+    expect(screen.getAllByRole("tab")).toHaveLength(12);
+    await user.click(screen.getByRole("tab", { name: /Section 1/ }));
+    await user.clear(screen.getByLabelText("Menu label"));
+    await user.type(screen.getByLabelText("Menu label"), "ID Pattern");
+    await user.clear(screen.getByLabelText("Link", { exact: true }));
+    await user.type(screen.getByLabelText("Link", { exact: true }), "/id-pattern");
+    expect(screen.getByRole("link", { name: /Section 1/ })).toHaveAttribute("href", "/id-pattern");
+    expect(window.location.hash).toBe("#extra-1");
+    await user.click(screen.getByRole("button", { name: "Compare original" }));
+    expect(screen.getAllByRole("tab")).toHaveLength(10);
+    await user.click(screen.getByRole("button", { name: "Show draft" }));
+    expect(screen.getByRole("tab", { name: /ID Pattern/ })).toBeInTheDocument();
+    view.unmount();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByRole("tab", { name: /ID Pattern/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /About/ }));
+    await user.click(screen.getByText("Additional sections"));
+    await user.click(screen.getByRole("button", { name: "Remove ID Pattern" }));
+    expect(screen.queryByRole("tab", { name: /ID Pattern/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Section 2/ })).toBeInTheDocument();
+  });
+
   it("groups the palette into Brand, Utility, and Semantic rows", async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -182,3 +182,28 @@ The repository itself uses `public/brand/` as its Bananas source directory and `
 ## License
 
 [MIT](LICENSE). See [TRADEMARKS.md](TRADEMARKS.md) for the distinction between the open-source project and the Bananas identity included as the default example.
+
+## Optional custom sections
+
+Add any number of `customSections` to `brand-dna.json`. They appear after the core chapters, in array order, with their own navigation entry and hash URL. Existing brands need no changes.
+
+```json
+{
+  "customSections": [
+    {
+      "id": "id-pattern",
+      "menuLabel": "ID Pattern",
+      "title": "Create a brand pattern",
+      "description": "Generate official variations of the brand pattern.",
+      "link": "/id-pattern",
+      "image": "references/id-pattern.png"
+    }
+  ]
+}
+```
+
+`id`, `menuLabel`, `title`, `description`, and `link` are required; `image` is optional. IDs must be unique lowercase slugs and cannot use core chapter or legacy navigation IDs. Links accept HTTPS URLs or paths relative to the website root. Images live under `references/` and are validated and copied with the source assets. The manifest exposes section metadata, chapter links, and resource links for agents.
+
+In the local editor, open **About → Additional sections** to add or remove sections, then select a section to edit its fields. Identifiers stay stable while labels and titles change. These edits follow the existing local draft, comparison, and JSON/change-request export workflow. No custom JavaScript, embedded application, or client-specific runtime is executed by a section.
+
+For an existing installation, update both the package and the source schema from `node_modules/brand-dna/public/brand/brand-dna.schema.json` before using this field. Keep provenance updated when adding brand decisions.

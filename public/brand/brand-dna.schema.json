@@ -76,6 +76,64 @@
     "provenance"
   ],
   "properties": {
+    "customSections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "menuLabel",
+          "title",
+          "description",
+          "link"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+            "not": {
+              "enum": [
+                "about",
+                "logo",
+                "typography",
+                "color",
+                "borders",
+                "shadows",
+                "imagery",
+                "iconography",
+                "voice",
+                "use-cases",
+                "principles",
+                "layout",
+                "motion",
+                "applications"
+              ]
+            }
+          },
+          "menuLabel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link": {
+            "type": "string",
+            "pattern": "^(https://[^\\s]+|/(?!/)[^\\s]*)$"
+          },
+          "image": {
+            "type": "string",
+            "pattern": "^references/(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.(avif|jpe?g|png|svg|webp)$"
+          }
+        }
+      }
+    },
     "$schema": { "type": "string" },
     "meta": {
       "type": "object",

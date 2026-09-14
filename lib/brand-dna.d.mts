@@ -10,7 +10,9 @@ export type BrandProject = {
   siteUrl: string;
   brandFile: string;
   schemaFile: string;
-  brandDna: typeof brandDna;
+  brandDna: typeof brandDna & {
+    customSections?: Array<{ id: string; menuLabel: string; title: string; description: string; link: string; image?: string }>;
+  };
 };
 
 export const defaultConfig: {
